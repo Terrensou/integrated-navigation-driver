@@ -1,0 +1,16 @@
+NMEA_Serial:
+  serial_port: /dev/ttyUSB0
+  baud: 115200
+  NMEA_pub_topic: /nmea/sentence
+
+NMEA_Parser:
+  parse_GPFPD: true
+  parse_GTIMU: false
+  parse_GPGGA: false
+  parse_NVSTD: false
+  parse_GPCHC: true
+
+NavsatFix_generator:
+  use_gnss_time: true
+  time_zone: 8  # parse gnss time to ROS NavsatFix stamp, if use GPGGA defalut time zone is 0
+  leap_second: 37 #  used for GPFPD: leap second from 1970s to 2022 is 27
