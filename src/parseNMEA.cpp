@@ -25,11 +25,11 @@ public:
     {
         ros::NodeHandle nh_local("~");
 
-        use_GPFPD = nh_local.param("use_GPFPD", false);
-        use_GTIMU = nh_local.param("use_GTIMU", false);
-        use_GPGGA = nh_local.param("use_GPGGA", false);
-        use_NVSTD = nh_local.param("use_NVSTD", false);
-        use_GPCHC = nh_local.param("use_GPCHC", false);
+        nh_local.getParam("GPFPD", use_GPFPD);
+        nh_local.getParam("GTIMU", use_GTIMU);
+        nh_local.getParam("GPGGA", use_GPGGA);
+        nh_local.getParam("NVSTD", use_NVSTD);
+        nh_local.getParam("GPCHC", use_GPCHC);
 
         nmea_sentense_sub = nh_.subscribe("/nmea_sentence", 1, &NMEA_Parser::NMEAReader, this);
 
@@ -184,16 +184,14 @@ public:
 
         if (vSub.size() < 16)
         {
-            ROS_WARN("Can not Parse NMEA GPFPD Message!");
+            ROS_WARN("Can not Parse NMEA GPFPD Message! Maybe too much empty");
             return;
         }
-
 
         msg_out.header.frame_id = "GPFPD";
         char *ptr_t;
 
         // 时间
-
         msg_out.gnss_week = boost::numeric_cast<std::uint16_t>(strtoul(vSub[1].c_str(), &ptr_t, 10));
         msg_out.gnss_time = boost::numeric_cast<double>(strtof64(vSub[2].c_str(), &ptr_t));
 

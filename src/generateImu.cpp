@@ -22,9 +22,9 @@ public:
     Imu_Generator()
     {
         ros::NodeHandle nh_local("~");
-        generate_from = nh_local.param<std::string>("Imu_generate_from", "GPCHC");
-        use_gnss_time = nh_local.param("use_gnss_time", false);
-        leap_second = nh_local.param("leap_second", 27);
+        nh_local.getParam("Imu_generate_from", generate_from);
+        nh_local.getParam("use_gnss_time", use_gnss_time);
+        nh_local.getParam("leap_second", leap_second);
 
         imu_pub = nh_.advertise<sensor_msgs::Imu>("/integrated_nav/Imu", 10);
         ROS_WARN("If no Imu message, maybe you source %s message is empty", generate_from.c_str());
@@ -57,6 +57,7 @@ public:
         {
 //     conside GNSS UTC time from 1980, we need to mines leap second from 1970 to 1980
             nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->gnss_week, msg_in->gnss_time, leap_second - 9);
+//            nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->gnss_week, msg_in->gnss_time, 0);
         } else
         {
             nanosecond = msg_in->header.stamp.toNSec();
@@ -72,6 +73,7 @@ public:
         auto linear_acceleration_y = msg_in->acceleration_y * 9.8;
         auto linear_acceleration_z = msg_in->acceleration_z * 9.8;
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
+
 
         pubImu(msg_out);
     }
@@ -146,7 +148,7 @@ private:
 
     std::string generate_from;
     bool use_gnss_time = false;
-    short leap_second = 0;
+    int leap_second = 0;
 
     message_filters::Subscriber<integrated_navigation_driver::NMEA_GPFPD> gpfpd_sub;
     message_filters::Subscriber<integrated_navigation_driver::NMEA_GTIMU> gtimu_sub;

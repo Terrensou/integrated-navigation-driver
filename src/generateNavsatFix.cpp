@@ -16,7 +16,7 @@ ros::Publisher navsatfix_pub;
 
 std::string generate_from;
 bool use_gnss_time = false;
-short leap_second = 0;
+int leap_second = 27;
 
 void pubNavsatFix(const sensor_msgs::NavSatFix * msg)
 {
@@ -162,9 +162,9 @@ int main(int argc, char** argv)
     ros::Subscriber nmea_sub;
 
     ros::NodeHandle nh_local("~");
-    generate_from = nh_local.param<std::string>("NavsatFix_generate_from", "GPGGA");
-    use_gnss_time = nh_local.param("use_gnss_time", false);
-    leap_second = nh_local.param("leap_second", 27);
+    nh_local.getParam("NavsatFix_generate_from", generate_from);
+    nh_local.getParam("use_gnss_time", use_gnss_time);
+    nh_local.getParam("leap_second", leap_second);
 
     ROS_WARN("If no NavsatFix message, maybe you source %s message is empty", generate_from.c_str());
     if (generate_from == "GPGGA")
