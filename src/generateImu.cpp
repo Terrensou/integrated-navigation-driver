@@ -14,6 +14,8 @@
 #include <vector>
 #include <sstream>
 
+std::string frame_id;
+
 class Imu_Generator
 {
 
@@ -23,6 +25,7 @@ public:
     {
         ros::NodeHandle nh_local("~");
         nh_local.getParam("Imu_generate_from", generate_from);
+        nh_local.getParam("frame_id", frame_id);
         nh_local.getParam("use_gnss_time", use_gnss_time);
         nh_.getParam("time_set/leap_second", leap_second);
 
@@ -51,7 +54,6 @@ public:
     {
         auto msg_out = new sensor_msgs::Imu();
 
-        msg_out->header.frame_id = "imu_link";
         uint64_t nanosecond = 0;
         if (use_gnss_time)
         {
@@ -83,7 +85,6 @@ public:
     {
         auto msg_out = new sensor_msgs::Imu();
 
-        msg_out->header.frame_id = "imu";
         uint64_t nanosecond = 0;
         if (use_gnss_time)
         {
@@ -119,7 +120,7 @@ public:
 
     static void fillBasicImumsg(sensor_msgs::Imu & msg, const uint64_t nanosecond, double yaw, double pitch, double roll, double angular_velocity_x, double angular_velocity_y, double angular_velocity_z, double linear_acceleration_x, double linear_acceleration_y, double linear_acceleration_z)
     {
-        msg.header.frame_id = "imu";
+        msg.header.frame_id = frame_id;
 
         ros::Time tROSTime;
         msg.header.stamp = tROSTime.fromNSec(nanosecond);
@@ -149,6 +150,7 @@ private:
     ros::Subscriber nmea_sub;
 
     std::string generate_from;
+
     bool use_gnss_time = false;
     int leap_second = 0;
 

@@ -14,6 +14,7 @@
 ros::Publisher navsatfix_pub;
 
 std::string generate_from;
+std::string frame_id;
 bool use_gnss_time = false;
 int leap_second = 27;
 
@@ -24,7 +25,7 @@ void pubNavsatFix(const sensor_msgs::NavSatFix * msg)
 
 void fillBasicNavsatFixmsg(sensor_msgs::NavSatFix& msg, const uint64_t nanosecond, const double latitude, const double longitude, const double altitude)
 {
-    msg.header.frame_id = "fix";
+    msg.header.frame_id = frame_id;
 
     ros::Time tROSTime;
     msg.header.stamp = tROSTime.fromNSec(nanosecond);
@@ -38,7 +39,7 @@ void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::Const
 {
     char *ptr_t;
     auto msg_out = new sensor_msgs::NavSatFix();
-    msg_out->header.frame_id = "fix";
+
     if (use_gnss_time)
     {
         ros::NodeHandle nh_;
@@ -107,6 +108,7 @@ void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::Const
 void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::ConstPtr msg_in)
 {
     auto msg_out = new sensor_msgs::NavSatFix();
+
     uint64_t nanosecond = 0;
     if (use_gnss_time)
     {
@@ -166,6 +168,7 @@ void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::Const
 void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::ConstPtr msg_in)
 {
     auto msg_out = new sensor_msgs::NavSatFix();
+
     uint64_t nanosecond = 0;
     if (use_gnss_time)
     {
@@ -211,6 +214,7 @@ int main(int argc, char** argv)
 
     ros::NodeHandle nh_local("~");
     nh_local.getParam("NavsatFix_generate_from", generate_from);
+    nh_local.getParam("frame_id", frame_id);
     nh_local.getParam("use_gnss_time", use_gnss_time);
     nh_.getParam("time_set/leap_second", leap_second);
 

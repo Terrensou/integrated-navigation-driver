@@ -17,8 +17,8 @@
 #include <vector>
 #include <sstream>
 
-std::string odomFrameId = "map";
-
+std::string odomParentFrameId = "map";
+std::string odomChildFrameId = "base_link";
 bool gnss_fixed = false;
 
 class Odom_Generator
@@ -53,18 +53,19 @@ public:
         gnss_fixed = true;
 
         ros::NodeHandle nh_local("~");
-        nh_local.getParam("frame_id", odomFrameId);
+        nh_local.getParam("parent_frame_id", odomParentFrameId);
+        nh_local.getParam("child_frame_id", odomChildFrameId);
         nh_local.getParam("coordinate_type", coordinate_type);
 
         auto odom_trans = new geometry_msgs::TransformStamped();
         auto msg_out = new nav_msgs::Odometry();
 
-        odom_trans->header.frame_id = odomFrameId.c_str();
-        msg_out->header.frame_id = odomFrameId.c_str();
+        odom_trans->header.frame_id = odomParentFrameId.c_str();
+        msg_out->header.frame_id = odomParentFrameId.c_str();
         odom_trans->header.stamp = msgNavsatFix_in->header.stamp;
         msg_out->header.stamp = msgNavsatFix_in->header.stamp;
-        odom_trans->child_frame_id = "base_link";
-        msg_out->child_frame_id = "base_link";
+        odom_trans->child_frame_id = odomChildFrameId.c_str();
+        msg_out->child_frame_id = odomChildFrameId.c_str();
 
         double x,y,z = 0;
         if (coordinate_type == "LLA") {
