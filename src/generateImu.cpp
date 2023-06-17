@@ -24,7 +24,7 @@ public:
         ros::NodeHandle nh_local("~");
         nh_local.getParam("Imu_generate_from", generate_from);
         nh_local.getParam("use_gnss_time", use_gnss_time);
-        nh_local.getParam("leap_second", leap_second);
+        nh_.getParam("time_set/leap_second", leap_second);
 
         imu_pub = nh_.advertise<sensor_msgs::Imu>("/integrated_nav/Imu", 10);
         ROS_WARN("If no Imu message, maybe you source %s message is empty", generate_from.c_str());
@@ -51,7 +51,7 @@ public:
     {
         auto msg_out = new sensor_msgs::Imu();
 
-        msg_out->header.frame_id = "imu";
+        msg_out->header.frame_id = "imu_link";
         uint64_t nanosecond = 0;
         if (use_gnss_time)
         {
@@ -74,8 +74,9 @@ public:
         auto linear_acceleration_z = msg_in->acceleration_z * 9.8;
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
 
-
         pubImu(msg_out);
+
+        delete(msg_out);
     }
 
     void parseGPFPDmsgGTIMUmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::ConstPtr& msgGPFPD_in, const integrated_navigation_driver::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
@@ -107,6 +108,7 @@ public:
 
         pubImu(msg_out);
 
+        delete(msg_out);
     }
 
 

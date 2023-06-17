@@ -1,7 +1,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/NavSatFix.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
+#include <sensor_msgs/NavSatStatus.h>
 #include "integrated_navigation_driver/NMEA_GPFPD.h"
 #include "integrated_navigation_driver/NMEA_GPGGA.h"
 #include "integrated_navigation_driver/NMEA_GPCHC.h"
@@ -42,12 +41,12 @@ void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::Const
     msg_out->header.frame_id = "fix";
     if (use_gnss_time)
     {
-        ros::NodeHandle nh_local("~");
+        ros::NodeHandle nh_;
         ros::Time tROSTime;
 
         auto utc_time = boost::numeric_cast<double>(strtof64(msg_in->utc_time.c_str(), &ptr_t));
 
-        int time_zone = nh_local.param("time_zone", 0);
+        int time_zone = nh_.param("time_set/time_zone", 0);
 
         unsigned long utc_data_sec = getUTCDate2second();
         unsigned int hour = int(utc_time)/10000;
@@ -101,6 +100,8 @@ void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::Const
     msg_out->position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_APPROXIMATED;
 
     pubNavsatFix(msg_out);
+
+    delete(msg_out);
 }
 
 void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::ConstPtr msg_in)
@@ -115,7 +116,40 @@ void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::Const
     {
         nanosecond = msg_in->header.stamp.toNSec();
     }
-// TODO: parse GPCHC status to NavsatFixStatus
+
+    auto satellite_status = msg_in->status[0];
+    switch (satellite_status) {
+        case 49:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_FIX;
+            break;
+        case 50:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_SBAS_FIX;
+            break;
+        case 51:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_SBAS_FIX;
+            break;
+        case 52:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_GBAS_FIX;
+            break;
+        case 53:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_GBAS_FIX;
+            break;
+        case 54:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_FIX;
+            break;
+        case 55:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_SBAS_FIX;
+            break;
+        case 56:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_GBAS_FIX;
+            break;
+        case 57:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_GBAS_FIX;
+            break;
+        default:
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_NO_FIX;
+    }
+
     auto latitude = msg_in->latitude;
     auto longitude = msg_in->longitude;
 //    GPFPD altitude refer to earth geoid, not WGS84 ellipsoid which defined in NavsatFix.
@@ -124,8 +158,9 @@ void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::Const
 
     msg_out->position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
 
-
     pubNavsatFix(msg_out);
+
+    delete(msg_out);
 }
 
 void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::ConstPtr msg_in)
@@ -141,16 +176,29 @@ void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::Const
         nanosecond = msg_in->header.stamp.toNSec();
     }
 
+    if (msg_in->status[1] > 48) {
+        if (msg_in->status[0] == 50) {
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_SBAS_FIX;
+        } else if (msg_in->status[0] == 52 || msg_in->status[0] == 53) {
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_GBAS_FIX;
+        } else {
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_FIX;
+        }
+    } else {
+        msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_NO_FIX;
+    }
 
     auto latitude = msg_in->latitude;
     auto longitude = msg_in->longitude;
 //    GPFPD altitude refer to earth geoid, not WGS84 ellipsoid which defined in NavsatFix.
     auto altitude = msg_in->altitude;
     fillBasicNavsatFixmsg(*msg_out, nanosecond, latitude, longitude, altitude);
-    // TODO: parse GPFPD status to NavsatFixStatus, but diff companies have diff type
+
     msg_out->position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
 
     pubNavsatFix(msg_out);
+
+    delete(msg_out);
 }
 
 
@@ -164,7 +212,7 @@ int main(int argc, char** argv)
     ros::NodeHandle nh_local("~");
     nh_local.getParam("NavsatFix_generate_from", generate_from);
     nh_local.getParam("use_gnss_time", use_gnss_time);
-    nh_local.getParam("leap_second", leap_second);
+    nh_.getParam("time_set/leap_second", leap_second);
 
     ROS_WARN("If no NavsatFix message, maybe you source %s message is empty", generate_from.c_str());
     if (generate_from == "GPGGA")

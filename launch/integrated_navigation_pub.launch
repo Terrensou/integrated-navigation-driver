@@ -2,19 +2,6 @@
     <rosparam command="load" file="$(find integrated_navigation_driver)/config/config.yaml" />
     <arg name="NMEA_pub_topic" default="/nmea/sentence" />
 
-<!-- NavsatFix/Imu message generator Parameters -->
-    <!-- optional: GPCHC, GPFPD, GPGGA-->
-    <arg name="NavsatFix_generate_from" default="GPCHC" />
-    <!-- optional: GPCHC, GPFPD-GTIMU-->
-    <arg name="Imu_generate_from" default="GPCHC" />
-    <!-- parse gnss time to ROS NavsatFix stamp, if use GPGGA defalut time zone is 0-->
-    <arg name="use_gnss_time" default="false" />
-    <arg name="time_zone" default="8" />
-    <!-- used for GPFPD: leap second from 1970s to 2022 is 27-->
-    <arg name="leap_second" default="27" />
-
-
-
     <!-- NMEA Serial Driver -->
     <node name="nmea_serial_driver_node" pkg="nmea_navsat_driver" type="nmea_topic_serial_reader" required="true">
         <remap from="/nmea_sentence" to="$(arg NMEA_pub_topic)" />-->
@@ -28,6 +15,9 @@
     </node>
 
     <node name="Imu_generator_node" pkg="integrated_navigation_driver" type="imu_generator_node" respawn="true">
+    </node>
+
+    <node name="Odom_generator_node" pkg="integrated_navigation_driver" type="odom_generator_node" respawn="true">
     </node>
 
 </launch>

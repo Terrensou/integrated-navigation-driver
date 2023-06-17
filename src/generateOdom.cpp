@@ -1,0 +1,163 @@
+#include <ros/ros.h>
+#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <sensor_msgs/NavSatStatus.h>
+#include <nav_msgs/Odometry.h>
+#include <nav_msgs/Path.h>
+#include <geodesy/utm.h>
+#include <geographic_msgs/GeoPoint.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include "utility.h"
+
+#include <cstring>
+#include <vector>
+#include <sstream>
+
+std::string odomFrameId = "map";
+
+bool gnss_fixed = false;
+
+class Odom_Generator
+{
+
+public:
+
+    Odom_Generator()
+    {
+
+        odom_pub = nh_.advertise<nav_msgs::Odometry>("/integrated_nav/Odom", 10);
+        path_pub = nh_.advertise<nav_msgs::Path>("/integrated_nav/Path",10, true);
+        ROS_WARN("If no Odometry message, maybe you NavsatFix message is empty");
+
+        navsatfix_sub.subscribe(nh_, "/integrated_nav/NavsatFix", 1);
+        imu_sub.subscribe(nh_, "/integrated_nav/Imu", 1);
+        navsatfix_imu_sync.reset(new NAVSATFIX_IMU_Sync (NAVSATFIX_IMU_Policy (10), navsatfix_sub, imu_sub));
+        navsatfix_imu_sync->registerCallback(boost::bind(&Odom_Generator::parseNavsatFixmsgIMUmsgCallback, this, _1, _2));
+
+    }
+
+    void parseNavsatFixmsgIMUmsgCallback(const sensor_msgs::NavSatFix::ConstPtr& msgNavsatFix_in, const sensor_msgs::Imu::ConstPtr& msgIMU_in)
+    {
+        if (msgNavsatFix_in->status.status <= sensor_msgs::NavSatStatus::STATUS_NO_FIX){
+            if (gnss_fixed){
+                ROS_WARN("GNSS signal no fixed.");
+            } else {
+                ROS_ERROR("GNSS signal no fixed, please wait for fixed!");
+                return;
+            }
+        }
+        gnss_fixed = true;
+
+        ros::NodeHandle nh_local("~");
+        nh_local.getParam("frame_id", odomFrameId);
+        nh_local.getParam("coordinate_type", coordinate_type);
+
+        auto odom_trans = new geometry_msgs::TransformStamped();
+        auto msg_out = new nav_msgs::Odometry();
+
+        odom_trans->header.frame_id = odomFrameId.c_str();
+        msg_out->header.frame_id = odomFrameId.c_str();
+        odom_trans->header.stamp = msgNavsatFix_in->header.stamp;
+        msg_out->header.stamp = msgNavsatFix_in->header.stamp;
+        odom_trans->child_frame_id = "base_link";
+        msg_out->child_frame_id = "base_link";
+
+        double x,y,z = 0;
+        if (coordinate_type == "LLA") {
+            x = msgNavsatFix_in->longitude;
+            y = msgNavsatFix_in->latitude;
+            z = msgNavsatFix_in->altitude;
+        } else if (coordinate_type == "ENU") {
+            geographic_msgs::GeoPoint lla_p;
+            lla_p.longitude = msgNavsatFix_in->longitude;
+            lla_p.latitude =  msgNavsatFix_in->latitude;
+            lla_p.altitude = msgNavsatFix_in->altitude;
+            geodesy::UTMPoint utm_p;
+            geodesy::fromMsg(lla_p, utm_p);
+            x = utm_p.easting;
+            y = utm_p.northing;
+            z = utm_p.altitude;
+        }
+        odom_trans->transform.translation.x = x;
+        odom_trans->transform.translation.y = y;
+        odom_trans->transform.translation.y = z;
+        odom_trans->transform.rotation = msgIMU_in->orientation;
+
+        msg_out->pose.pose.position.x = x;
+        msg_out->pose.pose.position.y = y;
+        msg_out->pose.pose.position.z = z;
+        msg_out->pose.pose.orientation = msgIMU_in->orientation;
+
+        msg_out->twist.twist.linear.x = msgIMU_in->linear_acceleration.x;
+        msg_out->twist.twist.linear.y = msgIMU_in->linear_acceleration.y;
+        msg_out->twist.twist.linear.z = msgIMU_in->linear_acceleration.z;
+
+        sendOdomTF(odom_trans);
+        pubOdom(msg_out);
+        generatePathFromOdometry(msg_out);
+
+        delete(odom_trans);
+        delete(msg_out);
+
+    }
+
+    void generatePathFromOdometry(const nav_msgs::Odometry * msg_in){
+        if(path_init_flag){
+            odom_path.header = msg_in->header;
+            path_init_flag = false;
+        }
+
+        geometry_msgs::PoseStamped pose_stamped;
+        pose_stamped.header = msg_in->header;
+        pose_stamped.pose = msg_in->pose.pose;
+
+        odom_path.poses.push_back(pose_stamped);
+
+        path_pub.publish(odom_path);
+
+    }
+
+    void pubOdom(const nav_msgs::Odometry * msg)
+    {
+        odom_pub.publish(*msg);
+    }
+
+    void sendOdomTF(const geometry_msgs::TransformStamped * msg)
+    {
+        odom_broadcaster.sendTransform(*msg);
+    }
+
+
+
+private:
+
+    ros::NodeHandle nh_;
+    tf2_ros::TransformBroadcaster odom_broadcaster;
+    ros::Publisher odom_pub;
+    ros::Publisher path_pub;
+
+    nav_msgs::Path odom_path;
+
+    bool path_init_flag = true;
+    std::string coordinate_type = "LLA";
+
+    message_filters::Subscriber<sensor_msgs::NavSatFix> navsatfix_sub;
+    message_filters::Subscriber<sensor_msgs::Imu> imu_sub;
+    typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::NavSatFix, sensor_msgs::Imu> NAVSATFIX_IMU_Policy;
+    typedef message_filters::Synchronizer<NAVSATFIX_IMU_Policy> NAVSATFIX_IMU_Sync;
+    boost::shared_ptr<NAVSATFIX_IMU_Sync> navsatfix_imu_sync;
+
+};
+
+int main(int argc, char** argv)
+{
+    ros::init(argc, argv, "odom_generator_node");
+
+    Odom_Generator generator;
+    ros::spin();
+    return 0;
+}

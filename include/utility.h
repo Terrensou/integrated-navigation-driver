@@ -7,20 +7,8 @@
 
 #endif //INTEGRATED_NAV_DRIVER_GENERATENAVSATFIXMSG_H
 
-#include <ros/ros.h>
-#include <sensor_msgs/NavSatFix.h>
-#include <sensor_msgs/NavSatStatus.h>
-#include "integrated_navigation_driver/NMEA_GPFPD.h"
-#include "integrated_navigation_driver/NMEA_GPCHC.h"
-#include "integrated_navigation_driver/NMEA_GPGGA.h"
-
 #include <cmath>
 #include <ctime>
-#include <cstring>
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/split.hpp>
-#include <vector>
-#include <sstream>
 
 // Utility Func
 long int getUTCDate2second()

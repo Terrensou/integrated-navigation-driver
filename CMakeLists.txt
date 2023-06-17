@@ -14,8 +14,9 @@ find_package(catkin REQUIRED COMPONENTS
         sensor_msgs
         message_generation
         message_filters
-#        NMEA_GPFPD
-#        NMEA_GTIMU
+        tf2_ros
+        geodesy
+        geographic_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -79,8 +80,6 @@ find_package(catkin REQUIRED COMPONENTS
  generate_messages(
    DEPENDENCIES
    std_msgs
-#   NMEA_GPFPD
-#   NMEA_GTIMU
 )
 
 ################################################
@@ -146,6 +145,7 @@ include_directories(
 add_executable(nmea_parser_node src/parseNMEA.cpp)
 add_executable(navsatfix_generator_node src/generateNavsatFix.cpp)
 add_executable(imu_generator_node src/generateImu.cpp)
+add_executable(odom_generator_node src/generateOdom.cpp)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
@@ -157,6 +157,7 @@ add_executable(imu_generator_node src/generateImu.cpp)
 add_dependencies(nmea_parser_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(navsatfix_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(imu_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(odom_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ## Specify libraries to link a library or executable target against
  target_link_libraries(nmea_parser_node
    ${catkin_LIBRARIES}
@@ -165,6 +166,9 @@ target_link_libraries(navsatfix_generator_node
         ${catkin_LIBRARIES}
         )
 target_link_libraries(imu_generator_node
+        ${catkin_LIBRARIES}
+        )
+target_link_libraries(odom_generator_node
         ${catkin_LIBRARIES}
         )
 #############
@@ -194,6 +198,11 @@ install(TARGETS navsatfix_generator_node
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
         )
 install(TARGETS imu_generator_node
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+        )
+install(TARGETS odom_generator_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
