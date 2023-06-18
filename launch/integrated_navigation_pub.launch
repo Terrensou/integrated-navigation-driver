@@ -22,7 +22,7 @@
 
     <!--  GNSS visualization  -->
     <node pkg="rostopic" type="rostopic" name="fake_gps_fix"
-          args="pub gps/fix sensor_msgs/NavSatFix '{ header: auto, latitude: 40.00571121, longitude: 116.35022637, altitude: 37.81999969482422}'"
+          args="pub gps/fix sensor_msgs/NavSatFix '{ header: map, latitude: 40.00571121, longitude: 116.35022637, altitude: 37.81999969482422}'"
           output="screen"/>
 
     <node pkg="rviz" type="rviz" name="odom_path_rviz"

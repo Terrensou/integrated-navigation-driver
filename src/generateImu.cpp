@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/TimeReference.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -30,6 +31,8 @@ public:
         nh_.getParam("time_set/leap_second", leap_second);
 
         imu_pub = nh_.advertise<sensor_msgs::Imu>("/integrated_nav/Imu", 10);
+        timereference_pub = nh_.advertise<sensor_msgs::TimeReference>("/integrated_nav/IMU_Time", 10);
+
         ROS_WARN("If no Imu message, maybe you source %s message is empty", generate_from.c_str());
 
         if (generate_from == "GPCHC")
@@ -55,14 +58,16 @@ public:
         auto msg_out = new sensor_msgs::Imu();
 
         uint64_t nanosecond = 0;
+        // conside GNSS UTC time from 1980, we need to mines leap second from 1970 to 1980
+        auto gnss_nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->gnss_week, msg_in->gnss_time, leap_second - 9);
+        auto local_nanosecond = msg_in->header.stamp.toNSec();
+        generateTimeReference(local_nanosecond, gnss_nanosecond, "NMEA_GPCHC");
         if (use_gnss_time)
         {
-//     conside GNSS UTC time from 1980, we need to mines leap second from 1970 to 1980
-            nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->gnss_week, msg_in->gnss_time, leap_second - 9);
-//            nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->gnss_week, msg_in->gnss_time, 0);
+            nanosecond = gnss_nanosecond;
         } else
         {
-            nanosecond = msg_in->header.stamp.toNSec();
+            nanosecond = local_nanosecond;
         }
 
         auto yaw = DEG2RAD(msg_in->heading);
@@ -86,13 +91,16 @@ public:
         auto msg_out = new sensor_msgs::Imu();
 
         uint64_t nanosecond = 0;
+        // conside GNSS UTC time from 1980, we need to mines leap second from 1970 to 1980
+        auto gnss_nanosecond = GNSSUTCWeekAndTime2Nanocecond(msgGPFPD_in->gnss_week, msgGPFPD_in->gnss_time, leap_second - 9);
+        auto local_nanosecond = msgGPFPD_in->header.stamp.toNSec();
+        generateTimeReference(local_nanosecond, gnss_nanosecond, "NMEA_GPFPD");
         if (use_gnss_time)
         {
-//     conside GNSS UTC time from 1980, we need to mines leap second from 1970 to 1980
-            nanosecond = GNSSUTCWeekAndTime2Nanocecond(msgGPFPD_in->gnss_week, msgGPFPD_in->gnss_time, leap_second - 9);
+            nanosecond = gnss_nanosecond;
         } else
         {
-            nanosecond = msgGPFPD_in->header.stamp.toNSec();
+            nanosecond = local_nanosecond;
         }
 
         auto yaw = DEG2RAD(msgGPFPD_in->heading);
@@ -145,8 +153,21 @@ public:
 
 private:
 
+    void generateTimeReference(const uint64_t stamp_nanosecond, const uint64_t gnss_nanosecond, const char * source) {
+        sensor_msgs::TimeReference msg;
+        msg.header.frame_id = "imu time";
+
+        ros::Time tROSTime;
+        msg.header.stamp = tROSTime.fromNSec(stamp_nanosecond);
+        msg.time_ref = tROSTime.fromNSec(gnss_nanosecond);
+        msg.source = source;
+
+        timereference_pub.publish(msg);
+    }
+
     ros::NodeHandle nh_;
     ros::Publisher imu_pub;
+    ros::Publisher timereference_pub;
     ros::Subscriber nmea_sub;
 
     std::string generate_from;

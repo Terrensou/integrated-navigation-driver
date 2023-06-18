@@ -14,3 +14,7 @@ roslaunch integrated_navigation_driver integrated_navigation_pub.launch
 ```
 ## Config
 Please see [config/config.yaml](config/config.yaml). 
+
+## TODO
+1. add support for odometry path export and visualization.
+2. test navsatfix ENU/LLA output for visualization

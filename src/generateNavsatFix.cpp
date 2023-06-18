@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/NavSatStatus.h>
+#include <sensor_msgs/TimeReference.h>
 #include "integrated_navigation_driver/NMEA_GPFPD.h"
 #include "integrated_navigation_driver/NMEA_GPGGA.h"
 #include "integrated_navigation_driver/NMEA_GPCHC.h"
@@ -12,6 +13,7 @@
 #include <sstream>
 
 ros::Publisher navsatfix_pub;
+ros::Publisher timereference_pub;
 
 std::string generate_from;
 std::string frame_id;
@@ -35,31 +37,41 @@ void fillBasicNavsatFixmsg(sensor_msgs::NavSatFix& msg, const uint64_t nanosecon
     msg.altitude = altitude;
 }
 
+void generateTimeReference(const uint64_t stamp_nanosecond, const uint64_t gnss_nanosecond, const char * source) {
+    sensor_msgs::TimeReference msg;
+    msg.header.frame_id = "gnss time";
+
+    ros::Time tROSTime;
+    msg.header.stamp = tROSTime.fromNSec(stamp_nanosecond);
+    msg.time_ref = tROSTime.fromNSec(gnss_nanosecond);
+    msg.source = source;
+
+    timereference_pub.publish(msg);
+}
+
 void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::ConstPtr msg_in)
 {
     char *ptr_t;
     auto msg_out = new sensor_msgs::NavSatFix();
+    ros::NodeHandle nh_;
+    int time_zone = nh_.param("time_set/time_zone", 0);
 
-    if (use_gnss_time)
-    {
-        ros::NodeHandle nh_;
-        ros::Time tROSTime;
+    auto utc_time = boost::numeric_cast<double>(strtof64(msg_in->utc_time.c_str(), &ptr_t));
+    unsigned long utc_data_sec = getUTCDate2second();
+    unsigned int utc_hour = int(utc_time)/10000;
+    unsigned int utc_minute = (int(utc_time)-utc_hour*10000)/100;
+    unsigned int utc_second = int(utc_time-utc_hour*10000-utc_minute*100);
+    unsigned long utc_nanosecond = int((utc_time-utc_hour*10000-utc_minute*100-utc_second)*1e9);
 
-        auto utc_time = boost::numeric_cast<double>(strtof64(msg_in->utc_time.c_str(), &ptr_t));
-
-        int time_zone = nh_.param("time_set/time_zone", 0);
-
-        unsigned long utc_data_sec = getUTCDate2second();
-        unsigned int hour = int(utc_time)/10000;
-        unsigned int minute = (int(utc_time)-hour*10000)/100;
-        unsigned int second = int(utc_time-hour*10000-minute*100);
-        unsigned long nanosecond = int((utc_time-hour*10000-minute*100-second)*1e9);
-
-        msg_out->header.stamp = tROSTime.fromNSec((utc_data_sec+(hour+time_zone)*60*60+minute*60+second)*1e9+nanosecond);
-
+    uint64_t nanosecond = 0;
+    auto gnss_nanosecond = (utc_data_sec+(utc_hour+time_zone)*60*60+utc_minute*60+utc_second)*1e9+utc_nanosecond;
+    auto local_nanosecond = msg_in->header.stamp.toNSec();
+    generateTimeReference(local_nanosecond, gnss_nanosecond, "NMEA_GPGGA");
+    if (use_gnss_time){
+        nanosecond = gnss_nanosecond;
     } else
     {
-        msg_out->header.stamp = msg_in->header.stamp;
+        nanosecond = local_nanosecond;
     }
 
     // refer: https://github.com/ros-drivers/nmea_navsat_driver/blob/indigo-devel/src/libnmea_navsat_driver/driver.py#L110-L114
@@ -83,17 +95,17 @@ void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::Const
     msg_out->status.service = sensor_msgs::NavSatStatus::SERVICE_GPS;
 
     auto latitude = boost::numeric_cast<double>(strtof64(msg_in->latitude.substr(0,2).c_str(), &ptr_t)) + boost::numeric_cast<double>(strtof64(msg_in->latitude.substr(2).c_str(), &ptr_t))/60;
-    msg_out->latitude = latitude;
     if (msg_in->latitude_direction == integrated_navigation_driver::NMEA_GPGGA::LATITUDE_SOUTH) {
-        msg_out->latitude = - msg_out->latitude;
+        latitude = - latitude;
     }
     auto longitude = boost::numeric_cast<double>(strtof64(msg_in->longitude.substr(0,3).c_str(), &ptr_t)) + boost::numeric_cast<double>(strtof64(msg_in->longitude.substr(3).c_str(), &ptr_t))/60;
-    msg_out->longitude = longitude;
     if (msg_in->longitude_direction == integrated_navigation_driver::NMEA_GPGGA::LONGITUDE_WEST) {
-        msg_out->longitude = - msg_out->longitude;
+        longitude = -longitude;
     }
 
-    msg_out->altitude = transfer2MeterUnit(msg_in->altitude, msg_in->altitude_units);
+    auto altitude = transfer2MeterUnit(msg_in->altitude, msg_in->altitude_units);
+
+    fillBasicNavsatFixmsg(*msg_out, nanosecond, latitude, longitude, altitude);
 
     msg_out->position_covariance[0] = pow(msg_in->horizontal_dilution_of_precision, 2);
     msg_out->position_covariance[4] = pow(msg_in->horizontal_dilution_of_precision, 2);
@@ -110,13 +122,16 @@ void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::Const
     auto msg_out = new sensor_msgs::NavSatFix();
 
     uint64_t nanosecond = 0;
+    // conside GNSS UTC time from 1980, we need to mines leap second from 1970 to 1980
+    auto gnss_nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->gnss_week, msg_in->gnss_time, leap_second - 9);
+    auto local_nanosecond = msg_in->header.stamp.toNSec();
+    generateTimeReference(local_nanosecond, gnss_nanosecond, "NMEA_GPCHC");
     if (use_gnss_time)
     {
-//     conside GNSS UTC time from 1980, we need to mines leap second from 1970 to 1980
-        nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->gnss_week, msg_in->gnss_time, leap_second - 9);
+        nanosecond = gnss_nanosecond;
     } else
     {
-        nanosecond = msg_in->header.stamp.toNSec();
+        nanosecond = local_nanosecond;
     }
 
     auto satellite_status = msg_in->status[0];
@@ -170,13 +185,17 @@ void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::Const
     auto msg_out = new sensor_msgs::NavSatFix();
 
     uint64_t nanosecond = 0;
+    // conside GNSS time from 1980, we need to mines leap second from 1970 to 1980
+    auto gnss_nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->gnss_week, msg_in->gnss_time, leap_second - 9);
+    auto local_nanosecond = msg_in->header.stamp.toNSec();
+    generateTimeReference(local_nanosecond, gnss_nanosecond, "NMEA_GPFPD");
     if (use_gnss_time)
     {
 //     conside GNSS time from 1980, we need to mines leap second from 1970 to 1980
-        nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->gnss_week, msg_in->gnss_time, leap_second - 9);
+        nanosecond = gnss_nanosecond;
     } else
     {
-        nanosecond = msg_in->header.stamp.toNSec();
+        nanosecond = local_nanosecond;
     }
 
     if (msg_in->status[1] > 48) {
@@ -210,6 +229,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "navsatfix_generator_node");
     ros::NodeHandle nh_;
     navsatfix_pub = nh_.advertise<sensor_msgs::NavSatFix>("/integrated_nav/NavsatFix", 10);
+    timereference_pub = nh_.advertise<sensor_msgs::TimeReference>("/integrated_nav/GNSS_Time", 10);
     ros::Subscriber nmea_sub;
 
     ros::NodeHandle nh_local("~");
