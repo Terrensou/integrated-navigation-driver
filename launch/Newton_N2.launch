@@ -1,5 +1,5 @@
 <launch>
-    <rosparam command="load" file="$(find integrated_navigation_driver)/config/config.yaml" />
+    <rosparam command="load" file="$(find integrated_navigation_driver)/config/Newton_N2_config.yaml" />
     <arg name="NMEA_pub_topic" default="/nmea/sentence" />
 
     <!-- NMEA Serial Driver -->

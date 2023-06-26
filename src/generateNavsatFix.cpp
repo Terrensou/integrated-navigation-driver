@@ -249,7 +249,7 @@ int main(int argc, char** argv)
     } else if (generate_from == "GPFPD")
     {
         ROS_WARN("GPFPD altitude refer to earth geoid, not WGS84 ellipsoid which defined in NavsatFix");
-        nmea_sub = nh_.subscribe("/nmea/gppfd", 10, parseGPFPDmsgCallback);
+        nmea_sub = nh_.subscribe("/nmea/gpfpd", 10, parseGPFPDmsgCallback);
     } else
     {
         ROS_ERROR("Uncorrect NavsatFix source. It should be 'GPGGA' / 'GPFPD' / 'GPCHC'.");

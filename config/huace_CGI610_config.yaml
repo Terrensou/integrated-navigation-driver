@@ -1,14 +1,14 @@
 # Define how to read serial
 nmea_serial_driver_node:
   port: /dev/ttyUSB0
-  baud: 115200
+  baud: 460800
 
 nmea_parser_node:
   GPFPD: true
   GTIMU: true
   GPGGA: false
   NVSTD: false
-  GPCHC: false
+  GPCHC: true
 
 # Used for TimeReference message, and NavsatFix & Imu message if "use_gnss_time" is true.
 time_set:
@@ -23,6 +23,7 @@ NavsatFix_generator_node:
 
 Imu_generator_node:
   Imu_generate_from: GPFPD-GTIMU  # optional: GPCHC, GPFPD-GTIMU
+#  Imu_generate_from: GPCHC
   frame_id: base_link
   use_gnss_time: true # IMU message header stamp is gnss time
 

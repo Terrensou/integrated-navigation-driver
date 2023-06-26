@@ -69,8 +69,8 @@ public:
 
         double x,y,z = 0;
         if (coordinate_type == "LLA") {
-            x = msgNavsatFix_in->longitude;
-            y = msgNavsatFix_in->latitude;
+            x = msgNavsatFix_in->latitude;
+            y = msgNavsatFix_in->longitude;
             z = msgNavsatFix_in->altitude;
         } else if (coordinate_type == "ENU") {
             geographic_msgs::GeoPoint lla_p;

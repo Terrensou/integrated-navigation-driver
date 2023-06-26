@@ -1,5 +1,5 @@
 # integrated-navigation-driver
-ROS Humble
+ROS Humble, read NMEA message(currently support: GPCHC, GPFPD, GPGGA, GTIMU) from serial and parse them to sensor_msgs::NavsatFIx, sensor_msgs::Imu, nav_msg::Odometry and nav_msgs::Path.
 ### Install
 ```bash
 sudo apt install ros-melodic-nmea-navsat-driver libgps-dev

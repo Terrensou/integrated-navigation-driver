@@ -1,6 +1,6 @@
 # Define how to read serial
 nmea_serial_driver_node:
-  port: /dev/ttyUSB0
+  port: /dev/ttyACM0
   baud: 115200
 
 nmea_parser_node:
