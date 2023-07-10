@@ -1,8 +1,13 @@
 <launch>
+    <arg name="bag_path" default="/home/lin/data/20230629Lidar16IMUGNSS.bag"/>
     <rosparam command="load" file="$(find integrated_navigation_driver)/config/Newton_N2_config.yaml" />
     <arg name="NMEA_pub_topic" default="/nmea/sentence" />
 
-    <!-- NMEA Serial Driver -->
+<!--     Static fake TF transform -->
+    <node pkg="tf2_ros" type="static_transform_publisher" name="car2imu" args="0 0 0 0 0 0 base_link imu_link" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="map2odometry" args="0 0 0 0 0 0 map gnss_odom" />
+
+<!--     NMEA Serial Driver -->
     <node name="nmea_serial_driver_node" pkg="nmea_navsat_driver" type="nmea_topic_serial_reader" required="true">
         <remap from="/nmea_sentence" to="$(arg NMEA_pub_topic)" />-->
     </node>
@@ -17,15 +22,15 @@
     <node name="Imu_generator_node" pkg="integrated_navigation_driver" type="imu_generator_node" respawn="true">
     </node>
 
-    <node name="Odom_generator_node" pkg="integrated_navigation_driver" type="odom_generator_node" respawn="true">
-    </node>
+<!--    <node name="Odometry_generator_node" pkg="integrated_navigation_driver" type="odom_generator_node" respawn="true">-->
+<!--    </node>-->
 
     <!--  GNSS visualization  -->
-    <node pkg="rostopic" type="rostopic" name="fake_gps_fix"
-          args="pub gps/fix sensor_msgs/NavSatFix '{ header: auto, latitude: 40.00571121, longitude: 116.35022637, altitude: 37.81999969482422}'"
-          output="screen"/>
+<!--    <node pkg="rostopic" type="rostopic" name="fake_gps_fix"-->
+<!--          args="pub gps/fix sensor_msgs/NavSatFix '{ header: auto, latitude: 40.00571121, longitude: 116.35022637, altitude: 37.81999969482422}'"-->
+<!--          output="screen"/>-->
 
-    <node pkg="rviz" type="rviz" name="odom_path_rviz"
-          args="-d $(find integrated_navigation_driver)/launch/rviz/demo_utm.rviz"/>
-
+<!--    <node pkg="rviz" type="rviz" name="odom_path_rviz"-->
+<!--          args="-d $(find integrated_navigation_driver)/launch/rviz/demo_utm.rviz"/>-->
+<!--    <node pkg="rosbag" type="play" name="bag_play" args="$(arg bag_path)"/>-->
 </launch>

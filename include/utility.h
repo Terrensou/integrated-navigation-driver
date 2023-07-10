@@ -9,6 +9,20 @@
 
 #include <cmath>
 #include <ctime>
+#include <cstring>
+#include <boost/endian/conversion.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/hex.hpp>
+#include <boost/lexical_cast.hpp>
+
+int isLittleEndian() {
+    int data = 1;
+    if (1 == *(uint8_t *) &data) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 // Utility Func
 long int getUTCDate2second()
@@ -61,4 +75,189 @@ double DEG2RAD(double x)
 double RAD2DEG(double x)
 {
     return x / M_PI * 180.0;
+}
+
+std::string bytes2String(const uint8_t *str, unsigned int num){
+//    return std::string((char *)str);
+//    std::string s((char *)str, sizeof(str));
+    return std::string((char *)str, num);
+}
+
+std::string string2Hex(const std::string& str) //transfer string to hex-string
+{
+    std::string result="0x";
+    std::string tmp;
+    std::stringstream ss;
+    for(int i=0;i<str.size();i++)
+    {
+        ss<<std::hex<<int(str[i])<<std::endl;
+        ss>>tmp;
+        result+=tmp;
+    }
+    return result;
+}
+
+template <typename T>
+T byte2toNumber(const std::string& bytes) {
+    if (bytes.length() != sizeof(uint16_t)) {
+        // 字节长度不匹配，抛出异常或返回默认值
+        std::cout << "receive bytes length = " <<bytes.length() << " , but size of tranform type: " << sizeof(uint16_t) << std::endl;
+        throw std::invalid_argument("Invalid byte length");
+    }
+
+    // 将字节串转换为十六进制字符串
+    std::string hexString;
+    boost::algorithm::hex(bytes, std::back_inserter(hexString));
+
+    // 将十六进制字符串转换回字节
+    std::string unhexString;
+    boost::algorithm::unhex(hexString, std::back_inserter(unhexString));
+
+    // 根据当前系统的字节顺序将字节转换
+    T result;
+    std::memcpy(&result, unhexString.data(), sizeof(T));
+    boost::endian::little_to_native_inplace(result);
+
+    return result;
+}
+
+template <typename T>
+T byte4toNumber(const std::string& bytes) {
+    if (bytes.length() != sizeof(uint32_t)) {
+        // 字节长度不匹配，抛出异常或返回默认值
+        std::cout << "receive bytes length = " <<bytes.length() << " , but size of tranform type: " << sizeof(uint32_t) << std::endl;
+        throw std::invalid_argument("Invalid byte length");
+    }
+
+    // 将字节串转换为十六进制字符串
+    std::string hexString;
+    boost::algorithm::hex(bytes, std::back_inserter(hexString));
+
+    // 将十六进制字符串转换回字节
+    std::string unhexString;
+    boost::algorithm::unhex(hexString, std::back_inserter(unhexString));
+
+    // 根据当前系统的字节顺序将字节转换为无符号整数
+    T result;
+    std::memcpy(&result, unhexString.data(), sizeof(T));
+    boost::endian::little_to_native_inplace(result);
+
+    return result;
+}
+
+template <typename T>
+T byte8toNumber(const std::string& bytes) {
+    if (bytes.length() != sizeof(uint64_t)) {
+        // 字节长度不匹配，抛出异常或返回默认值
+        std::cout << "receive bytes length = " <<bytes.length() << " , but size of tranform type: " << sizeof(uint64_t) << std::endl;
+        throw std::invalid_argument("Invalid byte length");
+    }
+
+    // 将字节串转换为十六进制字符串
+    std::string hexString;
+    boost::algorithm::hex(bytes, std::back_inserter(hexString));
+
+    // 将十六进制字符串转换回字节
+    std::string unhexString;
+    boost::algorithm::unhex(hexString, std::back_inserter(unhexString));
+
+    // 根据当前系统的字节顺序将字节转换为无符号整数
+    T result;
+    std::memcpy(&result, unhexString.data(), sizeof(T));
+    boost::endian::little_to_native_inplace(result);
+
+    return result;
+}
+
+int16_t byte2Int16(const std::string& bytes) {
+    if (bytes.length() != sizeof(int16_t)) {
+        // 字节长度不匹配，抛出异常或返回默认值
+        throw std::invalid_argument("Invalid byte length");
+    }
+
+    // 将字节串转换为十六进制字符串
+    std::string hexString;
+    boost::algorithm::hex(bytes, std::back_inserter(hexString));
+
+    // 将十六进制字符串转换为 unsigned int
+    uint16_t intValue;
+    std::stringstream ss;
+    ss << std::hex << hexString;
+    ss >> intValue;
+
+    // 执行字节交换
+    uint16_t swappedValue = boost::endian::endian_reverse(intValue);
+
+    // 将 unsigned int 转换为浮点数
+    int16_t result;
+    std::memcpy(&result, &swappedValue, sizeof(int16_t));
+
+//    std::cout << result << std::endl;
+
+    return result;
+}
+
+float_t byte2Float(const std::string& bytes) {
+    if (bytes.length() != sizeof(float_t)) {
+    // 字节长度不匹配，抛出异常或返回默认值
+        throw std::invalid_argument("Invalid byte length");
+    }
+
+    // 将字节串转换为十六进制字符串
+    std::string hexString;
+    boost::algorithm::hex(bytes, std::back_inserter(hexString));
+
+    // 将十六进制字符串转换为 unsigned int
+    uint32_t intValue;
+    std::stringstream ss;
+    ss << std::hex << hexString;
+    ss >> intValue;
+
+    // 执行字节交换
+    uint32_t swappedValue = boost::endian::endian_reverse(intValue);
+
+    // 将 unsigned int 转换为浮点数
+    float_t result;
+    std::memcpy(&result, &swappedValue, sizeof(float_t));
+
+//    std::cout << result << std::endl;
+
+    return result;
+}
+
+double_t byte2Double(const std::string& bytes) {
+    if (bytes.length() != sizeof(double_t)) {
+        // 字节长度不匹配，抛出异常或返回默认值
+        std::cout << bytes.length() << "   " << sizeof(double_t) << std::endl;
+        throw std::invalid_argument("Invalid byte length");
+    }
+
+    // 将字节串转换为十六进制字符串
+    std::string hexString;
+    boost::algorithm::hex(bytes, std::back_inserter(hexString));
+
+    // 将十六进制字符串转换为 unsigned int
+    uint64_t intValue;
+    std::stringstream ss;
+    ss << std::hex << hexString;
+    ss >> intValue;
+
+    // 执行字节交换
+    uint64_t swappedValue = boost::endian::endian_reverse(intValue);
+
+    // 将 unsigned int 转换为浮点数
+    double_t result;
+    std::memcpy(&result, &swappedValue, sizeof(double_t));
+
+    return result;
+}
+
+int checkSum(const std::string str) {
+    const char *c_str = str.c_str();
+    int result = c_str[0];
+    for (int i=1; c_str[i] != '*' ; i++) {
+        result ^= c_str[i];
+//        std::cout << c_str[i] << " ";
+    }
+    return result;
 }

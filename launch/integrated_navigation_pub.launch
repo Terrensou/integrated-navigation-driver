@@ -17,7 +17,7 @@
     <node name="Imu_generator_node" pkg="integrated_navigation_driver" type="imu_generator_node" respawn="true">
     </node>
 
-    <node name="Odom_generator_node" pkg="integrated_navigation_driver" type="odom_generator_node" respawn="true">
+    <node name="Odometry_generator_node" pkg="integrated_navigation_driver" type="odom_generator_node" respawn="true" output="screen">
     </node>
 
     <!--  GNSS visualization  -->

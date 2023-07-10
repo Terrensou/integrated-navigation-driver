@@ -17,11 +17,13 @@ find_package(catkin REQUIRED COMPONENTS
         tf2_ros
         geodesy
         geographic_msgs
+        serial
+        ecl_devices
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
+ find_package(Eigen3 REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -142,6 +144,8 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
+add_executable(original_binary_serial_parser_node src/parseOriginalBinarySerial.cpp include/Serial.h)
+add_executable(binary_serial_parser_node src/parseBinarySerial.cpp)
 add_executable(nmea_parser_node src/parseNMEA.cpp)
 add_executable(navsatfix_generator_node src/generateNavsatFix.cpp)
 add_executable(imu_generator_node src/generateImu.cpp)
@@ -154,14 +158,22 @@ add_executable(odom_generator_node src/generateOdom.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
+add_dependencies(original_binary_serial_parser_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(binary_serial_parser_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(nmea_parser_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(navsatfix_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(imu_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(odom_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ## Specify libraries to link a library or executable target against
- target_link_libraries(nmea_parser_node
-   ${catkin_LIBRARIES}
- )
+target_link_libraries(original_binary_serial_parser_node
+        ${catkin_LIBRARIES}
+        )
+target_link_libraries(binary_serial_parser_node
+        ${catkin_LIBRARIES}
+        )
+target_link_libraries(nmea_parser_node
+        ${catkin_LIBRARIES}
+        )
 target_link_libraries(navsatfix_generator_node
         ${catkin_LIBRARIES}
         )
@@ -187,11 +199,16 @@ target_link_libraries(odom_generator_node
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
+install(TARGETS binary_serial_parser_node
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+        )
 install(TARGETS nmea_parser_node
-    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+        )
 install(TARGETS navsatfix_generator_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

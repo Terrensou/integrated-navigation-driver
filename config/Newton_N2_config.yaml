@@ -17,17 +17,17 @@ time_set:
 
 NavsatFix_generator_node:
   NavsatFix_generate_from: GPFPD  # optional: GPCHC, GPFPD, GPGGA
-  frame_id: base_link # for rviz GNSS map visualization, we should use "base_link".
-  use_gnss_time: true # NavsatFix message header stamp is gnss time
+  frame_id: navsat_link # for rviz GNSS map visualization, we should use "base_link".
+  use_gnss_time: false # NavsatFix message header stamp is gnss time
 
 
 Imu_generator_node:
   Imu_generate_from: GPFPD-GTIMU  # optional: GPCHC, GPFPD-GTIMU
-  frame_id: base_link
-  use_gnss_time: true # IMU message header stamp is gnss time
+  frame_id: imu_link
+  use_gnss_time: false # IMU message header stamp is gnss time
 
 # In case of gnss point refer to imu original point. No external matrix.
 Odometry_generator_node:
-  coordinate_type: LLA  # optional: ENU, LLA, for rviz GNSS map visualization, we should use "ENU".
+  show_altitude: true
   parent_frame_id: map
   child_frame_id: base_link

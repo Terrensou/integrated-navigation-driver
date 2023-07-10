@@ -1,23 +1,26 @@
 <launch>
     <rosparam command="load" file="$(find integrated_navigation_driver)/config/huace_CGI610_config.yaml" />
     <arg name="NMEA_pub_topic" default="/nmea/sentence" />
+    <!--     Static fake TF transform -->
+<!--    <node pkg="tf2_ros" type="static_transform_publisher" name="car2imu" args="0 0 0 0 0 0 base_link imu_link" />-->
+<!--    <node pkg="tf2_ros" type="static_transform_publisher" name="map2odometry" args="0 0 0 0 0 0 map gnss_odom" />-->
 
     <!-- NMEA Serial Driver -->
     <node name="nmea_serial_driver_node" pkg="nmea_navsat_driver" type="nmea_topic_serial_reader" required="true">
         <remap from="/nmea_sentence" to="$(arg NMEA_pub_topic)" />-->
     </node>
 
-    <node name="nmea_parser_node" pkg="integrated_navigation_driver" type="nmea_parser_node" required="true">
+    <node name="nmea_parser_node" pkg="integrated_navigation_driver" type="nmea_parser_node" required="true" output="screen">
         <remap from="/nmea_sentence" to="$(arg NMEA_pub_topic)" />
     </node>
 
-    <node name="NavsatFix_generator_node" pkg="integrated_navigation_driver" type="navsatfix_generator_node" respawn="true">
+    <node name="NavsatFix_generator_node" pkg="integrated_navigation_driver" type="navsatfix_generator_node" respawn="true" output="screen">
     </node>
 
-    <node name="Imu_generator_node" pkg="integrated_navigation_driver" type="imu_generator_node" respawn="true">
+    <node name="Imu_generator_node" pkg="integrated_navigation_driver" type="imu_generator_node" respawn="true" output="screen">
     </node>
 
-    <node name="Odom_generator_node" pkg="integrated_navigation_driver" type="odom_generator_node" respawn="true">
+    <node name="Odometry_generator_node" pkg="integrated_navigation_driver" type="odom_generator_node" respawn="true" output="screen">
     </node>
 
     <!--  GNSS visualization  -->

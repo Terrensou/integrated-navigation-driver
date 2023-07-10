@@ -167,6 +167,8 @@ void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::Const
             msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_NO_FIX;
     }
 
+    msg_out->status.service = sensor_msgs::NavSatStatus::SERVICE_GPS;
+
     auto latitude = msg_in->latitude;
     auto longitude = msg_in->longitude;
 //    GPFPD altitude refer to earth geoid, not WGS84 ellipsoid which defined in NavsatFix.
@@ -176,6 +178,8 @@ void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::Const
     msg_out->position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
 
     pubNavsatFix(msg_out);
+//    ROS_INFO("NavsatFix frame id: %s",msg_out->header.frame_id.c_str());
+
 
     delete(msg_out);
 }
@@ -198,7 +202,7 @@ void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::Const
         nanosecond = local_nanosecond;
     }
 
-    if (msg_in->status[1] > 48) {
+    if (msg_in->status[1] > 50 && msg_in->status[1] < 55) {
         if (msg_in->status[0] == 50) {
             msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_SBAS_FIX;
         } else if (msg_in->status[0] == 52 || msg_in->status[0] == 53) {
@@ -210,6 +214,11 @@ void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::Const
         msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_NO_FIX;
     }
 
+    msg_out->status.service = sensor_msgs::NavSatStatus::SERVICE_GPS;
+//    if (msg_in->status[0] != 52 || msg_in->status[1] != 66) {
+//        ROS_ERROR("GNSS STATUS != 4B");
+//    }
+
     auto latitude = msg_in->latitude;
     auto longitude = msg_in->longitude;
 //    GPFPD altitude refer to earth geoid, not WGS84 ellipsoid which defined in NavsatFix.
@@ -219,6 +228,8 @@ void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::Const
     msg_out->position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
 
     pubNavsatFix(msg_out);
+
+//    ROS_INFO("NavsatFix frame id: %s",msg_out->header.frame_id.c_str());
 
     delete(msg_out);
 }

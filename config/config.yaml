@@ -8,7 +8,7 @@ nmea_parser_node:
   GTIMU: true
   GPGGA: false
   NVSTD: false
-  GPCHC: false
+  GPCHC: true
 
 # Used for TimeReference message, and NavsatFix & Imu message if "use_gnss_time" is true.
 time_set:
@@ -22,12 +22,13 @@ NavsatFix_generator_node:
 
 
 Imu_generator_node:
+#  Imu_generate_from: GPCHC  # optional: GPCHC, GPFPD-GTIMU
   Imu_generate_from: GPFPD-GTIMU  # optional: GPCHC, GPFPD-GTIMU
   frame_id: base_link
   use_gnss_time: true # IMU message header stamp is gnss time
 
 # In case of gnss point refer to imu original point. No external matrix.
 Odometry_generator_node:
-  coordinate_type: LLA  # optional: ENU, LLA, for rviz GNSS map visualization, we should use "ENU".
+  show_altitude: false
   parent_frame_id: map
   child_frame_id: base_link

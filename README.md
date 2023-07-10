@@ -18,3 +18,10 @@ Please see [config/config.yaml](config/config.yaml).
 ## TODO
 1. add support for odometry path export and visualization.
 2. test navsatfix ENU/LLA output for visualization
+3. support rotate imu data.
+4. support output cov.
+5. split GPFPD statu for diff company
+6. support prase big endian binary data
+
+## known issue 
+1. If Imu_generate_from: GPFPD-GTIMU with visualization, could cause 'Invalid argument passed to canTransform argument source_frame in tf2 frame_ids cannot be empty'
