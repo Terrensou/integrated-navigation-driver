@@ -3,6 +3,7 @@ project(integrated_navigation_driver)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
+#set(CMAKE_CXX_STANDARD 20)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -62,6 +63,10 @@ find_package(catkin REQUIRED COMPONENTS
    NMEA_GPGGA.msg
    NMEA_NVSTD.msg
    NMEA_GPCHC.msg
+   Spanlog_ASCIIHeader.msg
+   Spanlog_BinaryHeader.msg
+   Spanlog_INSPVAXA.msg
+   Spanlog_INSPVAXB.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -144,7 +149,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(original_binary_serial_parser_node src/parseOriginalBinarySerial.cpp include/Serial.h)
+add_executable(spanlog_parser_node src/parseSpanlog.cpp)
 add_executable(binary_serial_parser_node src/parseBinarySerial.cpp)
 add_executable(nmea_parser_node src/parseNMEA.cpp)
 add_executable(navsatfix_generator_node src/generateNavsatFix.cpp)
@@ -158,14 +163,14 @@ add_executable(odom_generator_node src/generateOdom.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(original_binary_serial_parser_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(spanlog_parser_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(binary_serial_parser_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(nmea_parser_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(navsatfix_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(imu_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(odom_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 ## Specify libraries to link a library or executable target against
-target_link_libraries(original_binary_serial_parser_node
+target_link_libraries(spanlog_parser_node
         ${catkin_LIBRARIES}
         )
 target_link_libraries(binary_serial_parser_node
@@ -200,6 +205,11 @@ target_link_libraries(odom_generator_node
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
 install(TARGETS binary_serial_parser_node
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+        )
+install(TARGETS spanlog_parser_node
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

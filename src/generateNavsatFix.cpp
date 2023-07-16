@@ -5,6 +5,7 @@
 #include "integrated_navigation_driver/NMEA_GPFPD.h"
 #include "integrated_navigation_driver/NMEA_GPGGA.h"
 #include "integrated_navigation_driver/NMEA_GPCHC.h"
+#include "integrated_navigation_driver/Spanlog_INSPVAXB.h"
 #include "utility.h"
 
 #include <cmath>
@@ -234,6 +235,52 @@ void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::Const
     delete(msg_out);
 }
 
+void parseINSPVAXBmsgCallback(const integrated_navigation_driver::Spanlog_INSPVAXB ::ConstPtr msg_in)
+{
+    auto msg_out = new sensor_msgs::NavSatFix();
+
+    uint64_t nanosecond = 0;
+    // conside GNSS time from 1980, we need to mines leap second from 1970 to 1980
+    auto gnss_nanosecond = GNSSUTCWeekAndTime2Nanocecond(msg_in->log_header.week, msg_in->log_header.milliseconds*1e-3, leap_second - 9);
+    auto local_nanosecond = msg_in->header.stamp.toNSec();
+    generateTimeReference(local_nanosecond, gnss_nanosecond, "Spanlog_INSPVAXB");
+    if (use_gnss_time)
+    {
+//     conside GNSS time from 1980, we need to mines leap second from 1970 to 1980
+        nanosecond = gnss_nanosecond;
+    } else
+    {
+        nanosecond = local_nanosecond;
+    }
+
+    if (msg_in->position_type > 0) {
+        if ((msg_in->position_type >= 68 && msg_in->position_type <= 80) || msg_in->position_type == 52) {
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_SBAS_FIX;
+        } else if ((msg_in->position_type >= 48 || msg_in->position_type >= 50) || msg_in->position_type == 56) {
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_GBAS_FIX;
+        } else {
+            msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_FIX;
+        }
+    } else {
+        msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_NO_FIX;
+    }
+
+    msg_out->status.service = sensor_msgs::NavSatStatus::SERVICE_GPS;
+
+    auto latitude = msg_in->latitude;
+    auto longitude = msg_in->longitude;
+    auto altitude = msg_in->height;
+    fillBasicNavsatFixmsg(*msg_out, nanosecond, latitude, longitude, altitude);
+
+    msg_out->position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_DIAGONAL_KNOWN;
+    msg_out->position_covariance[0] = pow(msg_in->longitude_std, 2);
+    msg_out->position_covariance[4] = pow(msg_in->latitude_std, 2);
+    msg_out->position_covariance[8] = pow(msg_in->height_std, 2);
+
+    pubNavsatFix(msg_out);
+
+    delete(msg_out);
+}
 
 int main(int argc, char** argv)
 {
@@ -261,9 +308,12 @@ int main(int argc, char** argv)
     {
         ROS_WARN("GPFPD altitude refer to earth geoid, not WGS84 ellipsoid which defined in NavsatFix");
         nmea_sub = nh_.subscribe("/nmea/gpfpd", 10, parseGPFPDmsgCallback);
+    } else if (generate_from == "INSPVAXB")
+    {
+        nmea_sub = nh_.subscribe("/spanlog/inspvaxb", 10, parseINSPVAXBmsgCallback);
     } else
     {
-        ROS_ERROR("Uncorrect NavsatFix source. It should be 'GPGGA' / 'GPFPD' / 'GPCHC'.");
+        ROS_ERROR("Uncorrect NavsatFix source. It should be 'GPGGA' / 'GPFPD' / 'GPCHC' / 'INSPVAXB'.");
         return 0;
     }
 

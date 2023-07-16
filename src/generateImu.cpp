@@ -9,6 +9,7 @@
 #include "integrated_navigation_driver/NMEA_GTIMU.h"
 #include "integrated_navigation_driver/NMEA_GPCHC.h"
 #include "integrated_navigation_driver/NMEA_NVSTD.h"
+#include "integrated_navigation_driver/Spanlog_INSPVAXB.h"
 #include "utility.h"
 
 #include <cstring>
@@ -47,8 +48,21 @@ public:
         } else if (generate_from == "GTIMU")
         {
             nmea_sub = nh_.subscribe("/nmea/gtimu", 10, &Imu_Generator::parseGTIMUmsgCallback, this);
+        } else if (generate_from == "INSPVAXB-GTIMU")
+        {
+            inspvaxb_sub.subscribe(nh_, "/spanlog/inspvaxb", 10);
+            gtimu_sub.subscribe(nh_, "/nmea/gtimu", 10);
+            inspvaxb_imu_sync.reset(new INSPVAXB_GTIMU_Sync (INSPVAXB_GTIMU_Policy (10), inspvaxb_sub, gtimu_sub));
+            inspvaxb_imu_sync->registerCallback(boost::bind(&Imu_Generator::parseINSPVAXBmsgGTIMUmsgCallback, this, _1, _2));
+        } else if (generate_from == "NVSTD-GPFPD-GTIMU")
+        {
+            gpfpd_sub.subscribe(nh_, "/nmea/gpfpd", 10);
+            nvstd_sub.subscribe(nh_, "/nmea/nvstd", 10);
+            gtimu_sub.subscribe(nh_, "/nmea/gtimu", 10);
+            nvstd_fpd_imu_sync.reset(new NVSTD_GPFPD_GTIMU_Sync (NVSTD_GPFPD_GTIMU_Policy (10), nvstd_sub, gpfpd_sub, gtimu_sub));
+            nvstd_fpd_imu_sync->registerCallback(boost::bind(&Imu_Generator::parseNVSTDmsgGPFPDmsgGTIMUmsgCallback, this, _1, _2, _3));
         } else {
-            ROS_ERROR("Uncorrect Imu source. It should be 'GPCHC' / 'GPFPD-GTIMU' / 'GTIMU'.");
+            ROS_ERROR("Uncorrect Imu source. It should be 'GPCHC' / 'GPFPD-GTIMU' / 'GTIMU' / 'INSPVAXB-GTIMU' / 'NVSTD-GPFPD-GTIMU'.");
             return;
         }
 
@@ -123,7 +137,6 @@ public:
         delete(msg_out);
     }
 
-
     void parseGPFPDmsgGTIMUmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::ConstPtr& msgGPFPD_in, const integrated_navigation_driver::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
     {
         auto msg_out = new sensor_msgs::Imu();
@@ -152,6 +165,84 @@ public:
         auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8;
 
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
+
+        pubImu(msg_out);
+//        ROS_INFO("IMU frame id: %s",msg_out->header.frame_id.c_str());
+
+        delete(msg_out);
+    }
+
+    void parseINSPVAXBmsgGTIMUmsgCallback(const integrated_navigation_driver::Spanlog_INSPVAXB::ConstPtr& msgINSPVAXB_in, const integrated_navigation_driver::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
+    {
+        auto msg_out = new sensor_msgs::Imu();
+
+        uint64_t nanosecond = 0;
+        // conside GNSS UTC time from 1980, we need to mines leap second from 1970 to 1980
+        auto gnss_nanosecond = GNSSUTCWeekAndTime2Nanocecond(msgINSPVAXB_in->log_header.week, msgINSPVAXB_in->log_header.milliseconds*1e-3, leap_second - 9);
+        auto local_nanosecond = msgINSPVAXB_in->header.stamp.toNSec();
+        generateTimeReference(local_nanosecond, gnss_nanosecond, "Spanlog_INSPVAXB");
+        if (use_gnss_time)
+        {
+            nanosecond = gnss_nanosecond;
+        } else
+        {
+            nanosecond = local_nanosecond;
+        }
+
+        auto yaw = DEG2RAD(msgINSPVAXB_in->azimuth);
+        auto pitch = DEG2RAD(msgINSPVAXB_in->pitch);
+        auto roll = DEG2RAD(msgINSPVAXB_in->roll);
+        auto angular_velocity_x = DEG2RAD(msgGTIMU_in->gyroscope_x);
+        auto angular_velocity_y = DEG2RAD(msgGTIMU_in->gyroscope_y);
+        auto angular_velocity_z = DEG2RAD(msgGTIMU_in->gyroscope_z);
+        auto linear_acceleration_x = msgGTIMU_in->acceleration_x * 9.8;
+        auto linear_acceleration_y = msgGTIMU_in->acceleration_y * 9.8;
+        auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8;
+
+        fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
+
+        msg_out->orientation_covariance[0] = msgINSPVAXB_in->pitch_std;
+        msg_out->orientation_covariance[4] = msgINSPVAXB_in->roll_std;
+        msg_out->orientation_covariance[8] = msgINSPVAXB_in->azimuth_std;
+
+        pubImu(msg_out);
+//        ROS_INFO("IMU frame id: %s",msg_out->header.frame_id.c_str());
+
+        delete(msg_out);
+    }
+
+    void parseNVSTDmsgGPFPDmsgGTIMUmsgCallback(const integrated_navigation_driver::NMEA_NVSTD::ConstPtr& msgNVSTD_in, const integrated_navigation_driver::NMEA_GPFPD::ConstPtr& msgGPFPD_in, const integrated_navigation_driver::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
+    {
+        auto msg_out = new sensor_msgs::Imu();
+
+        uint64_t nanosecond = 0;
+        // conside GNSS UTC time from 1980, we need to mines leap second from 1970 to 1980
+        auto gnss_nanosecond = GNSSUTCWeekAndTime2Nanocecond(msgGPFPD_in->gnss_week, msgGPFPD_in->gnss_time, leap_second - 9);
+        auto local_nanosecond = msgGPFPD_in->header.stamp.toNSec();
+        generateTimeReference(local_nanosecond, gnss_nanosecond, "NMEA_GPFPD");
+        if (use_gnss_time)
+        {
+            nanosecond = gnss_nanosecond;
+        } else
+        {
+            nanosecond = local_nanosecond;
+        }
+
+        auto yaw = DEG2RAD(msgGPFPD_in->heading);
+        auto pitch = DEG2RAD(msgGPFPD_in->pitch);
+        auto roll = DEG2RAD(msgGPFPD_in->roll);
+        auto angular_velocity_x = DEG2RAD(msgGTIMU_in->gyroscope_x);
+        auto angular_velocity_y = DEG2RAD(msgGTIMU_in->gyroscope_y);
+        auto angular_velocity_z = DEG2RAD(msgGTIMU_in->gyroscope_z);
+        auto linear_acceleration_x = msgGTIMU_in->acceleration_x * 9.8;
+        auto linear_acceleration_y = msgGTIMU_in->acceleration_y * 9.8;
+        auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8;
+
+        fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
+
+        msg_out->orientation_covariance[0] = msgNVSTD_in->pitch_std;
+        msg_out->orientation_covariance[4] = msgNVSTD_in->roll_std;
+        msg_out->orientation_covariance[8] = msgNVSTD_in->heading_std;
 
         pubImu(msg_out);
 //        ROS_INFO("IMU frame id: %s",msg_out->header.frame_id.c_str());
@@ -219,6 +310,16 @@ private:
     typedef message_filters::sync_policies::ApproximateTime<integrated_navigation_driver::NMEA_GPFPD, integrated_navigation_driver::NMEA_GTIMU> GPFPD_GTIMU_Policy;
     typedef message_filters::Synchronizer<GPFPD_GTIMU_Policy> GPFPD_GTIMU_Sync;
     boost::shared_ptr<GPFPD_GTIMU_Sync> fpd_imu_sync;
+
+    message_filters::Subscriber<integrated_navigation_driver::Spanlog_INSPVAXB> inspvaxb_sub;
+    typedef message_filters::sync_policies::ApproximateTime<integrated_navigation_driver::Spanlog_INSPVAXB, integrated_navigation_driver::NMEA_GTIMU> INSPVAXB_GTIMU_Policy;
+    typedef message_filters::Synchronizer<INSPVAXB_GTIMU_Policy> INSPVAXB_GTIMU_Sync;
+    boost::shared_ptr<INSPVAXB_GTIMU_Sync> inspvaxb_imu_sync;
+
+    message_filters::Subscriber<integrated_navigation_driver::NMEA_NVSTD> nvstd_sub;
+    typedef message_filters::sync_policies::ApproximateTime<integrated_navigation_driver::NMEA_NVSTD, integrated_navigation_driver::NMEA_GPFPD, integrated_navigation_driver::NMEA_GTIMU> NVSTD_GPFPD_GTIMU_Policy;
+    typedef message_filters::Synchronizer<NVSTD_GPFPD_GTIMU_Policy> NVSTD_GPFPD_GTIMU_Sync;
+    boost::shared_ptr<NVSTD_GPFPD_GTIMU_Sync> nvstd_fpd_imu_sync;
 
 };
 

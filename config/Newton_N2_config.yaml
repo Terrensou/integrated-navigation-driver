@@ -1,33 +1,44 @@
 # Define how to read serial
-nmea_serial_driver_node:
+Nmea_serial_driver_node:
   port: /dev/ttyACM0
   baud: 115200
+  timeout: 1000
 
-nmea_parser_node:
-  GPFPD: true
+Binary_serial_driver_node:
+  INSPVAXB: true
+  GPFPS: false
+  GPFPS_BIN: false
+  GTIMU: true
+  GTIMU_BIN: false
+
+Nmea_parser_node:
+  GPFPD: false
   GTIMU: true
   GPGGA: false
   NVSTD: false
   GPCHC: false
 
+Spanlog_parser_node:
+  INSPVAXA: false
+
 # Used for TimeReference message, and NavsatFix & Imu message if "use_gnss_time" is true.
 time_set:
   time_zone: 8  # parse gnss time to ROS NavsatFix stamp, if use GPGGA defalut time zone is 0
-  leap_second: 47 #  used for GPFPD: leap second from 1970s to 2022 is 27
+  leap_second: 27 #  used for GPFPD: leap second from 1970s to 2022 is 27
 
 NavsatFix_generator_node:
-  NavsatFix_generate_from: GPFPD  # optional: GPCHC, GPFPD, GPGGA
-  frame_id: navsat_link # for rviz GNSS map visualization, we should use "base_link".
+  NavsatFix_generate_from: INSPVAXB  # optional: GPCHC, GPFPD, GPGGA, INSPVAXB
+  frame_id: base_link # for rviz GNSS map visualization, we should use "base_link".
   use_gnss_time: false # NavsatFix message header stamp is gnss time
 
 
 Imu_generator_node:
-  Imu_generate_from: GPFPD-GTIMU  # optional: GPCHC, GPFPD-GTIMU
-  frame_id: imu_link
+  Imu_generate_from: INSPVAXB-GTIMU  # optional: GPCHC, GPFPD-GTIMU, INSPVAXB-GTIMU, NVSTD-GPFPD-GTIMU
+  frame_id: base_link
   use_gnss_time: false # IMU message header stamp is gnss time
 
 # In case of gnss point refer to imu original point. No external matrix.
 Odometry_generator_node:
-  show_altitude: true
+  show_altitude: false
   parent_frame_id: map
   child_frame_id: base_link

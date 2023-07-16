@@ -2,58 +2,20 @@
 // Created by lin on 23-7-5.
 //
 
+#include <cmath>
+#include <iostream>
 #include <ros/ros.h>
 #include <serial/serial.h>
 #include <std_msgs/String.h>
 #include <nmea_msgs/Sentence.h>
-#include <bitset>
+#include "integrated_navigation_driver/Spanlog_INSPVAXB.h"
 #include "utility.h"
-
-#include <iostream>
-#include <unistd.h>
-
-// refer to
-class INSPVA_HEADER {
-public:
-    uint8_t message_type;
-    uint8_t port_address;
-    uint16_t message_length;
-    uint16_t sequence;
-    uint8_t idle_time;
-    uint8_t time_status;
-    uint16_t week;
-    uint32_t milliseconds;
-    uint32_t receiver_status;
-    uint16_t revserved;
-    uint16_t receiver_sw_version;
-
-    INSPVA_HEADER(const std::string data) {
-        if (data.size() < 22) {
-            throw std::invalid_argument("INSPVA_HEADER get not enough byte length");
-            return;
-        }
-        // parse INSPVA_HEADER
-        message_type = data[0];
-        port_address = data[1];
-        message_type = byte2toNumber<uint16_t>(data.substr(2, 2));
-        sequence = byte2toNumber<uint16_t>(data.substr(4, 2));
-        idle_time = data[6];
-
-        time_status = data[7];
-        week = byte2toNumber<uint16_t>(data.substr(8, 2));
-        milliseconds = byte4toNumber<uint32_t>(data.substr(10, 4));
-
-        receiver_status = byte4toNumber<uint32_t>(data.substr(14, 4));
-        revserved = byte2toNumber<uint16_t>(data.substr(18, 2));
-        receiver_sw_version = byte2toNumber<uint16_t>(data.substr(20, 2));
-    }
-};
-
 
 class Binary_Serial_Parser
 {
 public:
     Binary_Serial_Parser(){
+        is_little_end = isNativeLittleEndian();
 
         uint8_t inspvaxb_heder[] = {0xAA, 0x44, 0x12, 0x1C, 0xB9, 0x05};
         inspvaxb = bytes2String(inspvaxb_heder, 6);
@@ -62,15 +24,29 @@ public:
         uint8_t gtimu_bin_heder[] = {0xAA, 0x55, 0x05};
         gtimu_bin = bytes2String(gtimu_bin_heder, 3);
 
-//        std::cout << "gpfps_bin: " << gpfps_bin.size() << "   " << string_to_hex(gpfps_bin)<< std::endl;
-//        std::cout << "gtimu_bin: " << gtimu_bin.size() << "   " << string_to_hex(gtimu_bin) << std::endl;
+        ros::NodeHandle nh_local("~");
+        nh_local.getParam("INSPVAXB", use_INSPVAXB);
+        nh_local.getParam("GPFPS", use_GPFPS);
+        nh_local.getParam("GPFPS_BIN", use_GPFPS_BIN);
+        nh_local.getParam("GTIMU", use_GTIMU);
+        nh_local.getParam("GTIMU_BIN", use_GTIMU_BIN);
 
         nmea_pub = nh_.advertise<nmea_msgs::Sentence>("/nmea/sentence", 10);
         spanlog_pub = nh_.advertise<nmea_msgs::Sentence>("/spanlog/sentence", 10);
 
-        std::string port = "/dev/ttyUSB0";
-        unsigned int baudrate = 115200;
-        uint32_t timeout_msec = 1000;
+        if (use_INSPVAXB)
+        {
+            INSPVAXB_pub = nh_.advertise<integrated_navigation_driver::Spanlog_INSPVAXB>("/spanlog/inspvaxb", 10);
+        }
+
+        std::string port;
+        int baudrate = 115200;
+        int timeout_msec = 1000;
+
+        nh_.getParam("Nmea_serial_driver_node/port", port);
+        nh_.getParam("Nmea_serial_driver_node/baud", baudrate);
+        nh_.getParam("Nmea_serial_driver_node/timeout", timeout_msec);
+
 
         // open serial
         try{
@@ -114,33 +90,33 @@ public:
 
 //            std::cout << buffer << std::endl;
 
-            if (buffer.find(inspvaxb) != std::string::npos) {
+            if (buffer.find(inspvaxb) != std::string::npos && use_INSPVAXB) {
 //                std::cout << "Detected: inspvaxb" << std::endl;
                 parseINSPVAXB(p_time);
                 buffer.clear();
                 continue;
             }
 
-            if (buffer.find(gpfps_bin) != std::string::npos) {
+            if (buffer.find(gpfps_bin) != std::string::npos && use_GPFPS_BIN) {
 //                std::cout << "Detected: gpfps_bin" << std::endl;
                 parseGPFPS_BIN(p_time);
                 buffer.clear();
                 continue;
             }
-            if (buffer.find(gpfps) != std::string::npos) {
+            if (buffer.find(gpfps) != std::string::npos && use_GPFPS) {
 //                std::cout << "Detected: gpfps" << std::endl;
                 parseGPFPS(p_time);
                 buffer.clear();
                 continue;
             }
 
-            if (buffer.find(gtimu_bin) != std::string::npos) {
+            if (buffer.find(gtimu_bin) != std::string::npos && use_GTIMU_BIN) {
 //                std::cout << "Detected: gtimu_bin" << std::endl;
                 parseGTIMU_BIN_Huace(p_time);
                 buffer.clear();
                 continue;
             }
-            if (buffer.find(gtimu) != std::string::npos) {
+            if (buffer.find(gtimu) != std::string::npos && use_GTIMU) {
 //                std::cout << "Detected: gtimu" << std::endl;
                 parseGTIMU(p_time);
                 buffer.clear();
@@ -160,88 +136,124 @@ public:
         spanlog_pub.publish(*msg);
     }
 
+    void pubINSPVAXB(const integrated_navigation_driver::Spanlog_INSPVAXB msg)
+    {
+        INSPVAXB_pub.publish(msg);
+    }
+
 
 private:
 
     ros::NodeHandle nh_;
     ros::Publisher nmea_pub;
     ros::Publisher spanlog_pub;
+    ros::Publisher INSPVAXB_pub;
 
     serial::Serial serialHandle;
 
-    bool from_little_end = true;
+    bool is_little_end = false;
+    bool use_INSPVAXB = false;
+    bool use_GPFPS = false;
+    bool use_GPFPS_BIN = false;
+    bool use_GTIMU = false;
+    bool use_GTIMU_BIN = false;
+
+
     std::string inspvaxb;
     std::string gpfps_bin;
     const std::string gpfps = "$GPFPS";
     std::string gtimu_bin;
     const std::string gtimu = "$GTIMU";
 
-
     void parseINSPVAXB(const ros::Time *now) {
 
-        nmea_msgs::Sentence msg_out;
+        integrated_navigation_driver::Spanlog_INSPVAXB msg_out;
         msg_out.header.stamp = *now;
-        msg_out.header.frame_id = "gnss_link";
+        msg_out.header.frame_id = "INSPVAX";
 
         // get bin chars
         std::string data;
         serialHandle.read(data, 152);
 
         // parse bin inspvax
-        INSPVA_HEADER inspva_header(data.substr(0, 22));
+        auto message_type = chat2BinaryString(data[0]);
+        if (message_type.substr(4, 2) == "00") {
+            msg_out.log_header.message_type[0] = integrated_navigation_driver::Spanlog_BinaryHeader::Binary_Format;
+        } else if (message_type.substr(4, 2) == "01") {
+            msg_out.log_header.message_type[0] = integrated_navigation_driver::Spanlog_BinaryHeader::ASCII_Format;
+        } else if (message_type.substr(4, 2) == "10") {
+            msg_out.log_header.message_type[0] = integrated_navigation_driver::Spanlog_BinaryHeader::Abbreviated_ASCII_NMEA_Format;
+        } else {
+            msg_out.log_header.message_type[0] = integrated_navigation_driver::Spanlog_BinaryHeader::Reserved;
+        }
+        if (message_type[6] == '1') {
+            msg_out.log_header.message_type[1] = integrated_navigation_driver::Spanlog_BinaryHeader::Response_Message;
+        } else {
+            msg_out.log_header.message_type[1] = integrated_navigation_driver::Spanlog_BinaryHeader::Original_Message;
+        }
 
-        auto ins_status = byte4toNumber<uint32_t>(data.substr(22, 4));
-        auto position_type = byte4toNumber<uint32_t>(data.substr(26, 4));
+        msg_out.log_header.port_address = data[1];
+        msg_out.log_header.message_length = byte2toNumber<uint16_t>(data.substr(2, 2));
+        msg_out.log_header.sequence = byte2toNumber<uint16_t>(data.substr(4, 2));
+        msg_out.log_header.idle_time = data[6] / 2.0;
+        msg_out.log_header.time_status = data[7];
 
-        auto latitude = byte8toNumber<double_t>(data.substr(30, 8));
-        auto longitude = byte8toNumber<double_t>(data.substr(38, 8));
-        auto height = byte8toNumber<double_t>(data.substr(46, 8));
-        auto undulation = byte4toNumber<float_t>(data.substr(54, 4));
+        msg_out.log_header.week = byte2toNumber<uint16_t>(data.substr(8, 2));
+        msg_out.log_header.milliseconds = byte4toNumber<uint32_t>(data.substr(10, 4));
 
-        auto north_velocity = byte8toNumber<double_t>(data.substr(58, 8));
-        auto east_velocity = byte8toNumber<double_t>(data.substr(66, 8));
-        auto up_velocity = byte8toNumber<double_t>(data.substr(74, 8));
+        msg_out.log_header.receiver_status = string2Hex(data.substr(14, 4), false, is_little_end);
+        msg_out.log_header.reserved = string2Hex(data.substr(18, 2), false, is_little_end);
+        msg_out.log_header.receiver_sw_version = byte2toNumber<uint16_t>(data.substr(20, 2));
 
-        auto roll = byte8toNumber<double_t>(data.substr(82, 8));
-        auto pitch = byte8toNumber<double_t>(data.substr(90, 8));
-        auto azimuth = byte8toNumber<double_t>(data.substr(98, 8));
+        msg_out.ins_status = byte4toNumber<uint32_t>(data.substr(22, 4));
+        msg_out.position_type = byte4toNumber<uint32_t>(data.substr(26, 4));
 
-        auto latitude_std = byte4toNumber<float_t>(data.substr(106, 4));
-        auto longitude_std = byte4toNumber<float_t>(data.substr(110, 4));
-        auto height_std = byte4toNumber<float_t>(data.substr(114, 4));
+        msg_out.latitude = byte8toNumber<double_t>(data.substr(30, 8));
+        msg_out.longitude = byte8toNumber<double_t>(data.substr(38, 8));
+        msg_out.height = byte8toNumber<double_t>(data.substr(46, 8));
+        msg_out.undulation = byte4toNumber<float_t>(data.substr(54, 4));
 
-        auto north_velocity_std = byte4toNumber<float_t>(data.substr(118, 4));
-        auto east_velocity_std = byte4toNumber<float_t>(data.substr(122, 4));
-        auto up_velocity_std = byte4toNumber<float_t>(data.substr(126, 4));
+        msg_out.north_velocity = byte8toNumber<double_t>(data.substr(58, 8));
+        msg_out.east_velocity = byte8toNumber<double_t>(data.substr(66, 8));
+        msg_out.up_velocity = byte8toNumber<double_t>(data.substr(74, 8));
 
-        auto roll_std = byte4toNumber<float_t>(data.substr(130, 4));
-        auto pitch_std = byte4toNumber<float_t>(data.substr(134, 4));
-        auto azimuth_std = byte4toNumber<float_t>(data.substr(138, 4));
+        msg_out.roll = byte8toNumber<double_t>(data.substr(82, 8));
+        msg_out.pitch = byte8toNumber<double_t>(data.substr(90, 8));
+        msg_out.azimuth = byte8toNumber<double_t>(data.substr(98, 8));
 
-        auto extended_solution_status = data.substr(142, 4);
+        msg_out.latitude_std = byte4toNumber<float_t>(data.substr(106, 4));
+        msg_out.longitude_std = byte4toNumber<float_t>(data.substr(110, 4));
+        msg_out.height_std = byte4toNumber<float_t>(data.substr(114, 4));
 
-        auto time_since_update = byte2toNumber<uint16_t>(data.substr(146, 2));
+        msg_out.north_velocity_std = byte4toNumber<float_t>(data.substr(118, 4));
+        msg_out.east_velocity_std = byte4toNumber<float_t>(data.substr(122, 4));
+        msg_out.up_velocity_std = byte4toNumber<float_t>(data.substr(126, 4));
 
-        auto crc32 = data.substr(148, 4);
+        msg_out.roll_std = byte4toNumber<float_t>(data.substr(130, 4));
+        msg_out.pitch_std = byte4toNumber<float_t>(data.substr(134, 4));
+        msg_out.azimuth_std = byte4toNumber<float_t>(data.substr(138, 4));
+
+        msg_out.extended_solution_status = string2Hex(data.substr(142, 4), false, is_little_end);
+
+        msg_out.time_since_update = byte2toNumber<uint16_t>(data.substr(146, 2));
+
+        auto crc32 = byte4toNumber<uint32_t>(data.substr(148, 4));
+        auto calcrc32 = CalculateBlockCRC32(154, (unsigned char *) (inspvaxb +data.substr(0,148)).c_str());
         //TODO: add CRC check.
+        if (crc32 != calcrc32) {
+            std::stringstream ss;
+            ss << "INSPVAXB data may be incorrect! Data CRC is " << std::hex << crc32 << " , but calculate CRC is " << calcrc32;
+            ROS_WARN("%s", ss.str().c_str());
+        }
 
-        std::stringstream sentence;
-        sentence.setf(std::ios::fixed);
-        sentence << "#INSPVAXA,COM1,0,73.5,FINESTEERING,1695,309428.000,02000040,4e77,43562;INS_SOLUTION_GOOD,INS_PSRSP,"
-                << latitude << "," << longitude << "," << height << "," << undulation << ","
-                << north_velocity << "," << east_velocity << "," << up_velocity << ","
-                << roll << "," << pitch << "," << azimuth << ","
-                << latitude_std << "," << longitude_std << "," << height_std << ","
-                << north_velocity_std << "," << east_velocity_std << "," << up_velocity_std << ","
-                << roll_std << "," << pitch_std << "," << azimuth_std << ","
-                << string2Hex(extended_solution_status) << "," << time_since_update << "*" << string2Hex(crc32.c_str());
+        nmea_msgs::Sentence transform_out;
+        transform_out.header.frame_id = "gnss_link";
+        transform_out.header.stamp = *now;
+        transformINSPVAXB2INSPVAXASentence(&msg_out, &transform_out, crc32);
 
-        msg_out.sentence = sentence.str();
-
-        pubSpanLog(&msg_out);
+        pubINSPVAXB(msg_out);
+        pubSpanLog(&transform_out);
     }
-
-
 
     void parseGPFPS(const ros::Time *now) {
         nmea_msgs::Sentence msg_out;
@@ -307,7 +319,7 @@ private:
 
         msg_out.sentence = sentence.str();
 
-        pubSpanLog(&msg_out);
+        pubNMEA(&msg_out);
     }
 
     void parseGTIMU(const ros::Time *now) {
@@ -361,6 +373,75 @@ private:
         msg_out.sentence = sentence.str();
 
         pubNMEA(&msg_out);
+    }
+
+    void parseGTIMU_BIN_Starnote(const ros::Time *now) {
+        nmea_msgs::Sentence msg_out;
+        msg_out.header.stamp = *now;
+        msg_out.header.frame_id = "gnss_link";
+
+        // get bin chars
+        std::string data;
+
+        serialHandle.read(data, 56);
+
+        // parse bin GTIMU_BIN
+        auto gnss_week = byte2toNumber<uint16_t>(data.substr(0, 2));
+        auto gnss_msec = byte4toNumber<uint32_t>(data.substr(2, 4));
+
+        auto gyroscope_x = byte8toNumber<double_t>(data.substr(6, 8));
+        auto gyroscope_y = byte8toNumber<double_t>(data.substr(14, 8));
+        auto gyroscope_z = byte8toNumber<double_t>(data.substr(22, 8));
+
+        auto acceleration_x = byte8toNumber<double_t>(data.substr(30, 8));
+        auto acceleration_y = byte8toNumber<double_t>(data.substr(38, 8));
+        auto acceleration_z = byte8toNumber<double_t>(data.substr(46, 8));
+
+        auto gyroscope_x_temperature = byte2toNumber<uint16_t>(data.substr(54, 2));
+        auto gyroscope_y_temperature = byte2toNumber<uint16_t>(data.substr(56, 2));
+        auto gyroscope_z_temperature = byte2toNumber<uint16_t>(data.substr(58, 2));
+
+        auto acceleration_x_temperature = byte2toNumber<uint16_t>(data.substr(60, 2));
+        auto acceleration_y_temperature = byte2toNumber<uint16_t>(data.substr(62, 2));
+        auto acceleration_z_temperature = byte2toNumber<uint16_t>(data.substr(64, 2));
+
+        auto status = data[66];
+
+
+        std::stringstream sentence;
+        sentence.setf(std::ios::fixed);
+//        sentence << "$GTIMU," << gnss_week << "," << std::setprecision(3) << gnss_msec * 1e-3 << ","
+//                 << std::setprecision(4) << gyroscope_x << "," << gyroscope_y << "," << gyroscope_z << ","
+//                 << acceleration_x << "," << acceleration_y << "," << acceleration_z << ","
+//                 << std::setprecision(1) << temperature * 1e-3 ;
+
+        sentence << '*' << std::hex << std::uppercase << checkSum(sentence.str().substr(1));
+
+        msg_out.sentence = sentence.str();
+
+        pubNMEA(&msg_out);
+    }
+
+
+    //TODO: support INSPVAXB to INSPVAXA sentence: port_address,time_status,ins_status,position_type convet to string
+    static void transformINSPVAXB2INSPVAXASentence(integrated_navigation_driver::Spanlog_INSPVAXB *msg_from, nmea_msgs::Sentence *msg_to, const uint32_t crc32) {
+        std::stringstream sentence;
+        sentence.setf(std::ios::fixed);
+        sentence << "#INSPVAXA,"<< msg_from->log_header.port_address << "," << msg_from->log_header.sequence << ","
+                << std::setprecision(3) << msg_from->log_header.idle_time << ","
+                << (unsigned int)msg_from->log_header.time_status << ","
+                << msg_from->log_header.week << "," << std::setprecision(3) << msg_from->log_header.milliseconds*1e-3 << ","
+                << msg_from->log_header.receiver_status << "," << msg_from->log_header.reserved << ","<< msg_from->log_header.receiver_sw_version << ";"
+                << (unsigned int)msg_from->ins_status << "," << (unsigned int)msg_from->position_type << ","
+                << msg_from->latitude << "," << msg_from->longitude << "," << msg_from->height << "," << msg_from->undulation << ","
+                << msg_from->north_velocity << "," << msg_from->east_velocity << "," << msg_from->up_velocity << ","
+                << msg_from->roll << "," << msg_from->pitch << "," << msg_from->azimuth << ","
+                << msg_from->latitude_std << "," << msg_from->longitude_std << "," << msg_from->height_std << ","
+                << msg_from->north_velocity_std << "," << msg_from->east_velocity_std << "," << msg_from->up_velocity_std << ","
+                << msg_from->roll_std << "," << msg_from->pitch_std << "," << msg_from->azimuth_std << ","
+                << msg_from->extended_solution_status << "," << msg_from->time_since_update << "*" << std::hex << crc32;
+
+        msg_to->sentence = sentence.str();
     }
 
 };

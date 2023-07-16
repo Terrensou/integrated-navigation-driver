@@ -31,7 +31,7 @@ public:
         nh_local.getParam("NVSTD", use_NVSTD);
         nh_local.getParam("GPCHC", use_GPCHC);
 
-        nmea_sentense_sub = nh_.subscribe("/nmea_sentence", 1, &NMEA_Parser::NMEAReader, this);
+        spanlog_sentense_sub = nh_.subscribe("/nmea_sentence", 1, &NMEA_Parser::NMEAReader, this);
 
         if (use_GPFPD)
         {
@@ -493,7 +493,7 @@ public:
 private:
     ros::NodeHandle nh_;
 
-    ros::Subscriber nmea_sentense_sub;
+    ros::Subscriber spanlog_sentense_sub;
 
     ros::Publisher GPFPD_pub;
     ros::Publisher GTIMU_pub;

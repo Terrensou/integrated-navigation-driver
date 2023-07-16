@@ -115,10 +115,10 @@ public:
         msg_out->pose.covariance[35] = msgIMU_in->orientation_covariance[8];
 
         // refer to LIO_SAM_6axis: https://github.com/JokerJohn/LIO_SAM_6AXIS/blob/main/LIO-SAM-6AXIS/src/simpleGpsOdom.cpp
-//        msg_out->pose.covariance[1] = x;
-//        msg_out->pose.covariance[2] = y;
-//        msg_out->pose.covariance[3] = z;
-//        msg_out->pose.covariance[4] = msgNavsatFix_in->status.status;
+        msg_out->pose.covariance[1] = x;
+        msg_out->pose.covariance[2] = y;
+        msg_out->pose.covariance[3] = z;
+        msg_out->pose.covariance[4] = msgNavsatFix_in->status.status;
 
         msg_out->twist.twist.linear.x = msgIMU_in->linear_acceleration.x;
         msg_out->twist.twist.linear.y = msgIMU_in->linear_acceleration.y;

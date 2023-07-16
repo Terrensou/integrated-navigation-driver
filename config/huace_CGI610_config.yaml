@@ -4,8 +4,8 @@ nmea_serial_driver_node:
   baud: 115200
 
 nmea_parser_node:
-  GPFPD: true
-  GTIMU: true
+  GPFPD: false
+  GTIMU: false
   GPGGA: false
   NVSTD: false
   GPCHC: true
@@ -13,10 +13,10 @@ nmea_parser_node:
 # Used for TimeReference message, and NavsatFix & Imu message if "use_gnss_time" is true.
 time_set:
   time_zone: 8  # parse gnss time to ROS NavsatFix stamp, if use GPGGA defalut time zone is 0
-  leap_second: 47 #  used for GPFPD: leap second from 1970s to 2022 is 27
+  leap_second: 27 #  used for GPFPD: leap second from 1970s to 2022 is 27
 
 NavsatFix_generator_node:
-  NavsatFix_generate_from: GPFPD  # optional: GPCHC, GPFPD, GPGGA
+  NavsatFix_generate_from: GPCHC  # optional: GPCHC, GPFPD, GPGGA
   frame_id: base_link # for rviz GNSS map visualization, we should use "base_link".
   use_gnss_time: false # NavsatFix message header stamp is gnss time
 
@@ -25,7 +25,7 @@ Imu_generator_node:
 #  Imu_generate_from: GPFPD-GTIMU  # optional: GPCHC, GPFPD-GTIMU
   Imu_generate_from: GPCHC
   frame_id: imu_link
-  use_gnss_time: false # IMU message header stamp is gnss time
+  use_gnss_time: true # IMU message header stamp is gnss time
 
 # In case of gnss point refer to imu original point. No external matrix.
 Odometry_generator_node:

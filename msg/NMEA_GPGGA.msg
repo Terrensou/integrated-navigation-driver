@@ -1,6 +1,6 @@
 Header  header
 
-# UTC time
+#UTC time
 string utc_time
 
 string latitude
