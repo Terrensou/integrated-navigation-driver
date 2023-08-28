@@ -23,7 +23,7 @@ public:
 
         nh_local.getParam("INSPVAX", use_INSPVAXA);
 
-        spanlog_sentense_sub = nh_.subscribe("/spanlog/sentence", 1, &NMEA_Parser::SpanlogReader, this);
+        spanlog_sentense_sub = nh_.subscribe("/spanlog/sentence", 1, &NMEA_Parser::SpanlogReader, this, ros::TransportHints().tcpNoDelay());
 
         if (use_INSPVAXA)
         {

@@ -16,10 +16,10 @@ find_package(catkin REQUIRED COMPONENTS
         message_generation
         message_filters
         tf2_ros
-        geodesy
-        geographic_msgs
+        nav_msgs
         serial
         ecl_devices
+        geodesy
 )
 
 ## System dependencies are found with CMake's conventions

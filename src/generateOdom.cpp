@@ -17,8 +17,6 @@
 #include <vector>
 #include <sstream>
 
-
-
 class Odom_Generator
 {
 
@@ -66,7 +64,7 @@ public:
 //        Eigen::Vector3d pLLA(msgNavsatFix_in->latitude, msgNavsatFix_in->longitude, msgNavsatFix_in->altitude);
         geographic_msgs::GeoPoint pLLA;
         pLLA.longitude = msgNavsatFix_in->longitude;
-        pLLA.latitude =  msgNavsatFix_in->latitude;
+        pLLA.latitude = msgNavsatFix_in->latitude;
         pLLA.altitude = msgNavsatFix_in->altitude;
         geodesy::UTMPoint pUTM;
         geodesy::fromMsg(pLLA, pUTM);
@@ -89,12 +87,32 @@ public:
         odom_trans->child_frame_id = odomChildFrameId.c_str();
         msg_out->child_frame_id = odomChildFrameId.c_str();
 
-        double x = pUTM.easting - originalUTM.easting;
-        double y = pUTM.northing - originalUTM.northing;
+        double x = 0;
+        double y = 0;
         double z = 0;
-        if (show_altitude) {
-            z = pUTM.altitude - originalUTM.altitude;
+        if (coordinate_type == "ENU") {
+//            x = pUTM.easting - originalUTM.easting;
+//            y = pUTM.northing - originalUTM.northing;
+            y = pUTM.easting - originalUTM.easting;
+            x = pUTM.northing - originalUTM.northing;
+            if (show_altitude) {
+                z = pUTM.altitude - originalUTM.altitude;
+            }
+        } else if (coordinate_type == "UTM") {
+            x = pUTM.easting;
+            y = pUTM.northing;
+            if (show_altitude) {
+                z = pUTM.altitude;
+            }
+        } else if (coordinate_type == "LLA") {
+            x = msgNavsatFix_in->longitude;
+            y = msgNavsatFix_in->latitude;
+            if (show_altitude) {
+                z = msgNavsatFix_in->altitude;
+            }
         }
+
+
 
         odom_trans->transform.translation.x = x;
         odom_trans->transform.translation.y = y;
@@ -115,10 +133,10 @@ public:
         msg_out->pose.covariance[35] = msgIMU_in->orientation_covariance[8];
 
         // refer to LIO_SAM_6axis: https://github.com/JokerJohn/LIO_SAM_6AXIS/blob/main/LIO-SAM-6AXIS/src/simpleGpsOdom.cpp
-        msg_out->pose.covariance[1] = x;
-        msg_out->pose.covariance[2] = y;
-        msg_out->pose.covariance[3] = z;
-        msg_out->pose.covariance[4] = msgNavsatFix_in->status.status;
+//        msg_out->pose.covariance[1] = x;
+//        msg_out->pose.covariance[2] = y;
+//        msg_out->pose.covariance[3] = z;
+//        msg_out->pose.covariance[4] = msgNavsatFix_in->status.status;
 
         msg_out->twist.twist.linear.x = msgIMU_in->linear_acceleration.x;
         msg_out->twist.twist.linear.y = msgIMU_in->linear_acceleration.y;

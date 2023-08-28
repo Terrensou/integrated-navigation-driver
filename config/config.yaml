@@ -10,6 +10,8 @@ Binary_serial_driver_node:
   GPFPS_BIN: false
   GTIMU: false
   GTIMU_BIN: false
+  GPGGA: true
+  GPFPD: true
 
 Nmea_parser_node:
   GPFPD: false
@@ -39,6 +41,7 @@ Imu_generator_node:
 
 # In case of gnss point refer to imu original point. No external matrix.
 Odometry_generator_node:
-  show_altitude: false
-  parent_frame_id: map
-  child_frame_id: base_link
+  coordinate_type: ENU # optional: ENU(first point refer to zero), UTM, LLA
+  show_altitude: true
+  parent_frame_id: odom
+  child_frame_id: navsat_link

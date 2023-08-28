@@ -299,18 +299,18 @@ int main(int argc, char** argv)
     ROS_WARN("If no NavsatFix message, maybe you source %s message is empty", generate_from.c_str());
     if (generate_from == "GPGGA")
     {
-        nmea_sub = nh_.subscribe("/nmea/gpgga", 10, parseGPGGAmsgCallback);
+        nmea_sub = nh_.subscribe("/nmea/gpgga", 10, parseGPGGAmsgCallback, ros::TransportHints().tcpNoDelay());
     } else if (generate_from == "GPCHC")
     {
         ROS_WARN("GPCHC altitude refer to earth geoid, not WGS84 ellipsoid which defined in NavsatFix");
-        nmea_sub = nh_.subscribe("/nmea/gpchc", 10, parseGPCHCmsgCallback);
+        nmea_sub = nh_.subscribe("/nmea/gpchc", 10, parseGPCHCmsgCallback, ros::TransportHints().tcpNoDelay());
     } else if (generate_from == "GPFPD")
     {
         ROS_WARN("GPFPD altitude refer to earth geoid, not WGS84 ellipsoid which defined in NavsatFix");
-        nmea_sub = nh_.subscribe("/nmea/gpfpd", 10, parseGPFPDmsgCallback);
+        nmea_sub = nh_.subscribe("/nmea/gpfpd", 10, parseGPFPDmsgCallback, ros::TransportHints().tcpNoDelay());
     } else if (generate_from == "INSPVAXB")
     {
-        nmea_sub = nh_.subscribe("/spanlog/inspvaxb", 10, parseINSPVAXBmsgCallback);
+        nmea_sub = nh_.subscribe("/spanlog/inspvaxb", 10, parseINSPVAXBmsgCallback, ros::TransportHints().tcpNoDelay());
     } else
     {
         ROS_ERROR("Uncorrect NavsatFix source. It should be 'GPGGA' / 'GPFPD' / 'GPCHC' / 'INSPVAXB'.");

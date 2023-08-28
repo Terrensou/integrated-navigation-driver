@@ -38,7 +38,7 @@ public:
 
         if (generate_from == "GPCHC")
         {
-            nmea_sub = nh_.subscribe("/nmea/gpchc", 1, &Imu_Generator::parseGPCHCmsgCallback, this);
+            nmea_sub = nh_.subscribe("/nmea/gpchc", 1, &Imu_Generator::parseGPCHCmsgCallback, this, ros::TransportHints().tcpNoDelay());
         } else if (generate_from == "GPFPD-GTIMU")
         {
             gpfpd_sub.subscribe(nh_, "/nmea/gpfpd", 10);
@@ -47,7 +47,7 @@ public:
             fpd_imu_sync->registerCallback(boost::bind(&Imu_Generator::parseGPFPDmsgGTIMUmsgCallback, this, _1, _2));
         } else if (generate_from == "GTIMU")
         {
-            nmea_sub = nh_.subscribe("/nmea/gtimu", 10, &Imu_Generator::parseGTIMUmsgCallback, this);
+            nmea_sub = nh_.subscribe("/nmea/gtimu", 10, &Imu_Generator::parseGTIMUmsgCallback, this, ros::TransportHints().tcpNoDelay());
         } else if (generate_from == "INSPVAXB-GTIMU")
         {
             inspvaxb_sub.subscribe(nh_, "/spanlog/inspvaxb", 10);
@@ -97,6 +97,10 @@ public:
         auto linear_acceleration_z = msg_in->acceleration_z * 9.8;
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
 
+        msg_out->orientation_covariance[0] = -1;
+        msg_out->angular_velocity_covariance[0] = -1;
+        msg_out->linear_acceleration_covariance[0] = -1;
+
         pubImu(msg_out);
 //        ROS_INFO("IMU frame id: %s",msg_out->header.frame_id.c_str());
 
@@ -130,6 +134,10 @@ public:
         auto linear_acceleration_y = msg_in->acceleration_y * 9.8;
         auto linear_acceleration_z = msg_in->acceleration_z * 9.8;
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
+
+        msg_out->orientation_covariance[0] = -1;
+        msg_out->angular_velocity_covariance[0] = -1;
+        msg_out->linear_acceleration_covariance[0] = -1;
 
         pubImu(msg_out);
 //        ROS_INFO("IMU frame id: %s",msg_out->header.frame_id.c_str());
@@ -165,6 +173,10 @@ public:
         auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8;
 
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
+
+        msg_out->orientation_covariance[0] = -1;
+        msg_out->angular_velocity_covariance[0] = -1;
+        msg_out->linear_acceleration_covariance[0] = -1;
 
         pubImu(msg_out);
 //        ROS_INFO("IMU frame id: %s",msg_out->header.frame_id.c_str());
@@ -205,6 +217,9 @@ public:
         msg_out->orientation_covariance[4] = msgINSPVAXB_in->roll_std;
         msg_out->orientation_covariance[8] = msgINSPVAXB_in->azimuth_std;
 
+        msg_out->angular_velocity_covariance[0] = -1;
+        msg_out->linear_acceleration_covariance[0] = -1;
+
         pubImu(msg_out);
 //        ROS_INFO("IMU frame id: %s",msg_out->header.frame_id.c_str());
 
@@ -243,6 +258,9 @@ public:
         msg_out->orientation_covariance[0] = msgNVSTD_in->pitch_std;
         msg_out->orientation_covariance[4] = msgNVSTD_in->roll_std;
         msg_out->orientation_covariance[8] = msgNVSTD_in->heading_std;
+
+        msg_out->angular_velocity_covariance[0] = -1;
+        msg_out->linear_acceleration_covariance[0] = -1;
 
         pubImu(msg_out);
 //        ROS_INFO("IMU frame id: %s",msg_out->header.frame_id.c_str());

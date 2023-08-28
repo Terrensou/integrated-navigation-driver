@@ -31,7 +31,7 @@ public:
         nh_local.getParam("NVSTD", use_NVSTD);
         nh_local.getParam("GPCHC", use_GPCHC);
 
-        spanlog_sentense_sub = nh_.subscribe("/nmea_sentence", 1, &NMEA_Parser::NMEAReader, this);
+        spanlog_sentense_sub = nh_.subscribe("/nmea_sentence", 1, &NMEA_Parser::NMEAReader, this, ros::TransportHints().tcpNoDelay());
 
         if (use_GPFPD)
         {
@@ -180,7 +180,7 @@ public:
     static void parseGPFPD2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_GPFPD& msg_out)
     {
         std::vector<std::string> vSub;
-        boost::split(vSub, msg_in, boost::is_any_of(","), boost::token_compress_on);
+        boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
 
         if (vSub.size() < 16)
         {
@@ -224,7 +224,7 @@ public:
     static void parseGTIMU2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_GTIMU& msg_out)
     {
         std::vector<std::string> vSub;
-        boost::split(vSub, msg_in, boost::is_any_of(","), boost::token_compress_on);
+        boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
 
         if (vSub.size() < 10)
         {
@@ -257,7 +257,7 @@ public:
     static void parseGPGGA2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_GPGGA& msg_out)
     {
         std::vector<std::string> vSub;
-        boost::split(vSub, msg_in, boost::is_any_of(","), boost::token_compress_on);
+        boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
 
         if (vSub.size() < 12)
         {
@@ -376,7 +376,7 @@ public:
     static void parseNVSTD2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_NVSTD& msg_out)
     {
         std::vector<std::string> vSub;
-        boost::split(vSub, msg_in, boost::is_any_of(","), boost::token_compress_on);
+        boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
 
         if (vSub.size() < 11)
         {
@@ -390,24 +390,24 @@ public:
         //
         msg_out.heading_std = boost::numeric_cast<double>(strtof64(vSub[1].c_str(), &ptr_t));
         msg_out.pitch_std = boost::numeric_cast<double>(strtof64(vSub[2].c_str(), &ptr_t));
-        msg_out.roll_std = boost::numeric_cast<double>(strtof64(vSub[2].c_str(), &ptr_t));
+        msg_out.roll_std = boost::numeric_cast<double>(strtof64(vSub[3].c_str(), &ptr_t));
 
         //
-        msg_out.latitude_std = boost::numeric_cast<double>(strtof64(vSub[2].c_str(), &ptr_t));
-        msg_out.longitude_std = boost::numeric_cast<double>(strtof64(vSub[2].c_str(), &ptr_t));
-        msg_out.altitude_std = boost::numeric_cast<double>(strtof64(vSub[2].c_str(), &ptr_t));
+        msg_out.latitude_std = boost::numeric_cast<double>(strtof64(vSub[4].c_str(), &ptr_t));
+        msg_out.longitude_std = boost::numeric_cast<double>(strtof64(vSub[5].c_str(), &ptr_t));
+        msg_out.altitude_std = boost::numeric_cast<double>(strtof64(vSub[6].c_str(), &ptr_t));
 
         //
-        msg_out.velocity_e_std = boost::numeric_cast<double>(strtof64(vSub[2].c_str(), &ptr_t));
-        msg_out.velocity_n_std = boost::numeric_cast<double>(strtof64(vSub[2].c_str(), &ptr_t));
-        msg_out.velocity_u_std = boost::numeric_cast<double>(strtof64(vSub[2].c_str(), &ptr_t));
+        msg_out.velocity_e_std = boost::numeric_cast<double>(strtof64(vSub[7].c_str(), &ptr_t));
+        msg_out.velocity_n_std = boost::numeric_cast<double>(strtof64(vSub[8].c_str(), &ptr_t));
+        msg_out.velocity_u_std = boost::numeric_cast<double>(strtof64(vSub[9].c_str(), &ptr_t));
 
     }
 
     static void parseGPCHC2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_GPCHC& msg_out)
     {
         std::vector<std::string> vSub;
-        boost::split(vSub, msg_in, boost::is_any_of(","), boost::token_compress_on);
+        boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
 
         if (vSub.size() < 24)
         {

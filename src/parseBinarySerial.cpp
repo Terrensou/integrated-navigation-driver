@@ -30,6 +30,8 @@ public:
         nh_local.getParam("GPFPS_BIN", use_GPFPS_BIN);
         nh_local.getParam("GTIMU", use_GTIMU);
         nh_local.getParam("GTIMU_BIN", use_GTIMU_BIN);
+        nh_local.getParam("GPGGA", use_GPGGA);
+        nh_local.getParam("GPFPD", use_GPFPD);
 
         nmea_pub = nh_.advertise<nmea_msgs::Sentence>("/nmea/sentence", 10);
         spanlog_pub = nh_.advertise<nmea_msgs::Sentence>("/spanlog/sentence", 10);
@@ -122,6 +124,18 @@ public:
                 buffer.clear();
                 continue;
             }
+            if (buffer.find(gpgga) != std::string::npos && use_GPGGA) {
+//                std::cout << "Detected: gtimu" << std::endl;
+                parseGPGGA(p_time);
+                buffer.clear();
+                continue;
+            }
+            if (buffer.find(gpfpd) != std::string::npos && use_GPFPD) {
+//                std::cout << "Detected: gtimu" << std::endl;
+                parseGPFPD(p_time);
+                buffer.clear();
+                continue;
+            }
 
         }
     }
@@ -157,13 +171,16 @@ private:
     bool use_GPFPS_BIN = false;
     bool use_GTIMU = false;
     bool use_GTIMU_BIN = false;
-
+    bool use_GPGGA = false;
+    bool use_GPFPD = false;
 
     std::string inspvaxb;
     std::string gpfps_bin;
     const std::string gpfps = "$GPFPS";
     std::string gtimu_bin;
     const std::string gtimu = "$GTIMU";
+    const std::string gpgga = "$GPGGA";
+    const std::string gpfpd = "$GPFPD";
 
     void parseINSPVAXB(const ros::Time *now) {
 
@@ -405,19 +422,51 @@ private:
         auto acceleration_y_temperature = byte2toNumber<uint16_t>(data.substr(62, 2));
         auto acceleration_z_temperature = byte2toNumber<uint16_t>(data.substr(64, 2));
 
+        auto avg_temperature = (gyroscope_x_temperature + gyroscope_y_temperature + gyroscope_z_temperature + acceleration_x_temperature + acceleration_y_temperature + acceleration_z_temperature) / 6.0;
+
         auto status = data[66];
 
 
         std::stringstream sentence;
         sentence.setf(std::ios::fixed);
-//        sentence << "$GTIMU," << gnss_week << "," << std::setprecision(3) << gnss_msec * 1e-3 << ","
-//                 << std::setprecision(4) << gyroscope_x << "," << gyroscope_y << "," << gyroscope_z << ","
-//                 << acceleration_x << "," << acceleration_y << "," << acceleration_z << ","
-//                 << std::setprecision(1) << temperature * 1e-3 ;
+        sentence << "$GTIMU," << gnss_week << "," << std::setprecision(3) << gnss_msec * 1e-3 << ","
+                 << std::setprecision(4) << gyroscope_x << "," << gyroscope_y << "," << gyroscope_z << ","
+                 << acceleration_x << "," << acceleration_y << "," << acceleration_z << ","
+                 << std::setprecision(1) << avg_temperature ;
 
         sentence << '*' << std::hex << std::uppercase << checkSum(sentence.str().substr(1));
 
         msg_out.sentence = sentence.str();
+
+        pubNMEA(&msg_out);
+    }
+
+    void parseGPGGA(const ros::Time *now) {
+        nmea_msgs::Sentence msg_out;
+        msg_out.header.stamp = *now;
+        msg_out.header.frame_id = "gnss_link";
+
+        std::string data = "$GPGGA";
+        serialHandle.readline(data, 128, "\r\n");
+        data.pop_back();
+        data.pop_back();
+
+        msg_out.sentence = data;
+
+        pubNMEA(&msg_out);
+    }
+
+    void parseGPFPD(const ros::Time *now) {
+        nmea_msgs::Sentence msg_out;
+        msg_out.header.stamp = *now;
+        msg_out.header.frame_id = "gnss_link";
+
+        std::string data = "$GPFPD";
+        serialHandle.readline(data, 128, "\r\n");
+        data.pop_back();
+        data.pop_back();
+
+        msg_out.sentence = data;
 
         pubNMEA(&msg_out);
     }
