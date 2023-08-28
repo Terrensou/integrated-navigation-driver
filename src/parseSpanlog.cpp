@@ -5,7 +5,7 @@
 #include <std_msgs/String.h>
 #include <nmea_msgs/Sentence.h>
 
-#include "integrated_navigation_driver/Spanlog_INSPVAXA.h"
+#include "integrated_navigation_reader/Spanlog_INSPVAXA.h"
 
 #include <cmath>
 #include <cstring>
@@ -27,7 +27,7 @@ public:
 
         if (use_INSPVAXA)
         {
-            INSPVAXA_pub = nh_.advertise<integrated_navigation_driver::Spanlog_INSPVAXA>("/spanlog/inspvaxa", 10);
+            INSPVAXA_pub = nh_.advertise<integrated_navigation_reader::Spanlog_INSPVAXA>("/spanlog/inspvaxa", 10);
         }
 
     }
@@ -37,7 +37,7 @@ public:
 
         bool detected_INSPVAXA = false;
 
-        integrated_navigation_driver::Spanlog_INSPVAXA * pINSPVAX = nullptr;
+        integrated_navigation_reader::Spanlog_INSPVAXA * pINSPVAX = nullptr;
 
 
         const std::string nmea_str = nmea_msg->sentence;
@@ -50,7 +50,7 @@ public:
 
         if (use_INSPVAXA && detected_INSPVAXA)
         {
-            pINSPVAX = new integrated_navigation_driver::Spanlog_INSPVAXA ();
+            pINSPVAX = new integrated_navigation_reader::Spanlog_INSPVAXA ();
             parseINSPVAXA2msg(nmea_str, *pINSPVAX);
             if (!pINSPVAX)
             {
@@ -68,7 +68,7 @@ public:
 
     }
 
-    static void parseINSPVAXA2msg(const std::string& msg_in, integrated_navigation_driver::Spanlog_INSPVAXA & msg_out)
+    static void parseINSPVAXA2msg(const std::string& msg_in, integrated_navigation_reader::Spanlog_INSPVAXA & msg_out)
     {
         std::vector<std::string> vSub;
         boost::split(vSub, msg_in, boost::is_any_of(",,|;"), boost::token_compress_on);
@@ -125,7 +125,7 @@ public:
     }
 
 
-    void pubINSPVAX(const integrated_navigation_driver::Spanlog_INSPVAXA * msg)
+    void pubINSPVAX(const integrated_navigation_reader::Spanlog_INSPVAXA * msg)
     {
         INSPVAXA_pub.publish(*msg);
     }

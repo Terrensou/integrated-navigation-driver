@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>integrated_navigation_driver</name>
+  <name>integrated_navigation_reader</name>
   <version>0.0.1</version>
-  <description>The integrated_navigation_driver package</description>
+  <description>The integrated_navigation_reader package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

@@ -1,10 +1,10 @@
 # Define how to read serial
-Nmea_serial_driver_node:
+Nmea_serial_reader_node:
   port: /dev/ttyACM0
   baud: 115200
   timeout: 1000
 
-Binary_serial_driver_node:
+Binary_serial_reader_node:
   INSPVAXB: true
   GPFPS: false
   GPFPS_BIN: false

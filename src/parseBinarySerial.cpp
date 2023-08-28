@@ -8,7 +8,7 @@
 #include <serial/serial.h>
 #include <std_msgs/String.h>
 #include <nmea_msgs/Sentence.h>
-#include "integrated_navigation_driver/Spanlog_INSPVAXB.h"
+#include "integrated_navigation_reader/Spanlog_INSPVAXB.h"
 #include "utility.h"
 
 class Binary_Serial_Parser
@@ -38,16 +38,16 @@ public:
 
         if (use_INSPVAXB)
         {
-            INSPVAXB_pub = nh_.advertise<integrated_navigation_driver::Spanlog_INSPVAXB>("/spanlog/inspvaxb", 10);
+            INSPVAXB_pub = nh_.advertise<integrated_navigation_reader::Spanlog_INSPVAXB>("/spanlog/inspvaxb", 10);
         }
 
         std::string port;
         int baudrate = 115200;
         int timeout_msec = 1000;
 
-        nh_.getParam("Nmea_serial_driver_node/port", port);
-        nh_.getParam("Nmea_serial_driver_node/baud", baudrate);
-        nh_.getParam("Nmea_serial_driver_node/timeout", timeout_msec);
+        nh_.getParam("Nmea_serial_reader_node/port", port);
+        nh_.getParam("Nmea_serial_reader_node/baud", baudrate);
+        nh_.getParam("Nmea_serial_reader_node/timeout", timeout_msec);
 
 
         // open serial
@@ -150,7 +150,7 @@ public:
         spanlog_pub.publish(*msg);
     }
 
-    void pubINSPVAXB(const integrated_navigation_driver::Spanlog_INSPVAXB msg)
+    void pubINSPVAXB(const integrated_navigation_reader::Spanlog_INSPVAXB msg)
     {
         INSPVAXB_pub.publish(msg);
     }
@@ -184,7 +184,7 @@ private:
 
     void parseINSPVAXB(const ros::Time *now) {
 
-        integrated_navigation_driver::Spanlog_INSPVAXB msg_out;
+        integrated_navigation_reader::Spanlog_INSPVAXB msg_out;
         msg_out.header.stamp = *now;
         msg_out.header.frame_id = "INSPVAX";
 
@@ -195,18 +195,18 @@ private:
         // parse bin inspvax
         auto message_type = chat2BinaryString(data[0]);
         if (message_type.substr(4, 2) == "00") {
-            msg_out.log_header.message_type[0] = integrated_navigation_driver::Spanlog_BinaryHeader::Binary_Format;
+            msg_out.log_header.message_type[0] = integrated_navigation_reader::Spanlog_BinaryHeader::Binary_Format;
         } else if (message_type.substr(4, 2) == "01") {
-            msg_out.log_header.message_type[0] = integrated_navigation_driver::Spanlog_BinaryHeader::ASCII_Format;
+            msg_out.log_header.message_type[0] = integrated_navigation_reader::Spanlog_BinaryHeader::ASCII_Format;
         } else if (message_type.substr(4, 2) == "10") {
-            msg_out.log_header.message_type[0] = integrated_navigation_driver::Spanlog_BinaryHeader::Abbreviated_ASCII_NMEA_Format;
+            msg_out.log_header.message_type[0] = integrated_navigation_reader::Spanlog_BinaryHeader::Abbreviated_ASCII_NMEA_Format;
         } else {
-            msg_out.log_header.message_type[0] = integrated_navigation_driver::Spanlog_BinaryHeader::Reserved;
+            msg_out.log_header.message_type[0] = integrated_navigation_reader::Spanlog_BinaryHeader::Reserved;
         }
         if (message_type[6] == '1') {
-            msg_out.log_header.message_type[1] = integrated_navigation_driver::Spanlog_BinaryHeader::Response_Message;
+            msg_out.log_header.message_type[1] = integrated_navigation_reader::Spanlog_BinaryHeader::Response_Message;
         } else {
-            msg_out.log_header.message_type[1] = integrated_navigation_driver::Spanlog_BinaryHeader::Original_Message;
+            msg_out.log_header.message_type[1] = integrated_navigation_reader::Spanlog_BinaryHeader::Original_Message;
         }
 
         msg_out.log_header.port_address = data[1];
@@ -473,7 +473,7 @@ private:
 
 
     //TODO: support INSPVAXB to INSPVAXA sentence: port_address,time_status,ins_status,position_type convet to string
-    static void transformINSPVAXB2INSPVAXASentence(integrated_navigation_driver::Spanlog_INSPVAXB *msg_from, nmea_msgs::Sentence *msg_to, const uint32_t crc32) {
+    static void transformINSPVAXB2INSPVAXASentence(integrated_navigation_reader::Spanlog_INSPVAXB *msg_from, nmea_msgs::Sentence *msg_to, const uint32_t crc32) {
         std::stringstream sentence;
         sentence.setf(std::ios::fixed);
         sentence << "#INSPVAXA,"<< msg_from->log_header.port_address << "," << msg_from->log_header.sequence << ","

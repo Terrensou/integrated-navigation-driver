@@ -2,10 +2,10 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/NavSatStatus.h>
 #include <sensor_msgs/TimeReference.h>
-#include "integrated_navigation_driver/NMEA_GPFPD.h"
-#include "integrated_navigation_driver/NMEA_GPGGA.h"
-#include "integrated_navigation_driver/NMEA_GPCHC.h"
-#include "integrated_navigation_driver/Spanlog_INSPVAXB.h"
+#include "integrated_navigation_reader/NMEA_GPFPD.h"
+#include "integrated_navigation_reader/NMEA_GPGGA.h"
+#include "integrated_navigation_reader/NMEA_GPCHC.h"
+#include "integrated_navigation_reader/Spanlog_INSPVAXB.h"
 #include "utility.h"
 
 #include <cmath>
@@ -50,7 +50,7 @@ void generateTimeReference(const uint64_t stamp_nanosecond, const uint64_t gnss_
     timereference_pub.publish(msg);
 }
 
-void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::ConstPtr msg_in)
+void parseGPGGAmsgCallback(const integrated_navigation_reader::NMEA_GPGGA::ConstPtr msg_in)
 {
     char *ptr_t;
     auto msg_out = new sensor_msgs::NavSatFix();
@@ -76,16 +76,16 @@ void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::Const
     }
 
     // refer: https://github.com/ros-drivers/nmea_navsat_driver/blob/indigo-devel/src/libnmea_navsat_driver/driver.py#L110-L114
-    if (msg_in->gnss_quality == integrated_navigation_driver::NMEA_GPGGA::GNSS_FIX_INVALID)
+    if (msg_in->gnss_quality == integrated_navigation_reader::NMEA_GPGGA::GNSS_FIX_INVALID)
     {
         msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_NO_FIX;
-    } else if (msg_in->gnss_quality == integrated_navigation_driver::NMEA_GPGGA::GNSS_SINGLE_POINT || msg_in->gnss_quality == integrated_navigation_driver::NMEA_GPGGA::GNSS_MANUAL_FIXED)
+    } else if (msg_in->gnss_quality == integrated_navigation_reader::NMEA_GPGGA::GNSS_SINGLE_POINT || msg_in->gnss_quality == integrated_navigation_reader::NMEA_GPGGA::GNSS_MANUAL_FIXED)
     {
         msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_FIX;
-    } else if (msg_in->gnss_quality == integrated_navigation_driver::NMEA_GPGGA::GNSS_PSEUDORANGE_DIFFERENTIAL)
+    } else if (msg_in->gnss_quality == integrated_navigation_reader::NMEA_GPGGA::GNSS_PSEUDORANGE_DIFFERENTIAL)
     {
         msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_SBAS_FIX;
-    } else if (msg_in->gnss_quality == integrated_navigation_driver::NMEA_GPGGA::GNSS_FIX_SOLUTION || msg_in->gnss_quality == integrated_navigation_driver::NMEA_GPGGA::GNSS_FLOATING_SOLUTION)
+    } else if (msg_in->gnss_quality == integrated_navigation_reader::NMEA_GPGGA::GNSS_FIX_SOLUTION || msg_in->gnss_quality == integrated_navigation_reader::NMEA_GPGGA::GNSS_FLOATING_SOLUTION)
     {
         msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_GBAS_FIX;
     } else
@@ -96,11 +96,11 @@ void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::Const
     msg_out->status.service = sensor_msgs::NavSatStatus::SERVICE_GPS;
 
     auto latitude = boost::numeric_cast<double>(strtof64(msg_in->latitude.substr(0,2).c_str(), &ptr_t)) + boost::numeric_cast<double>(strtof64(msg_in->latitude.substr(2).c_str(), &ptr_t))/60;
-    if (msg_in->latitude_direction == integrated_navigation_driver::NMEA_GPGGA::LATITUDE_SOUTH) {
+    if (msg_in->latitude_direction == integrated_navigation_reader::NMEA_GPGGA::LATITUDE_SOUTH) {
         latitude = - latitude;
     }
     auto longitude = boost::numeric_cast<double>(strtof64(msg_in->longitude.substr(0,3).c_str(), &ptr_t)) + boost::numeric_cast<double>(strtof64(msg_in->longitude.substr(3).c_str(), &ptr_t))/60;
-    if (msg_in->longitude_direction == integrated_navigation_driver::NMEA_GPGGA::LONGITUDE_WEST) {
+    if (msg_in->longitude_direction == integrated_navigation_reader::NMEA_GPGGA::LONGITUDE_WEST) {
         longitude = -longitude;
     }
 
@@ -118,7 +118,7 @@ void parseGPGGAmsgCallback(const integrated_navigation_driver::NMEA_GPGGA::Const
     delete(msg_out);
 }
 
-void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::ConstPtr msg_in)
+void parseGPCHCmsgCallback(const integrated_navigation_reader::NMEA_GPCHC::ConstPtr msg_in)
 {
     auto msg_out = new sensor_msgs::NavSatFix();
 
@@ -185,7 +185,7 @@ void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::Const
     delete(msg_out);
 }
 
-void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::ConstPtr msg_in)
+void parseGPFPDmsgCallback(const integrated_navigation_reader::NMEA_GPFPD::ConstPtr msg_in)
 {
     auto msg_out = new sensor_msgs::NavSatFix();
 
@@ -235,7 +235,7 @@ void parseGPFPDmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::Const
     delete(msg_out);
 }
 
-void parseINSPVAXBmsgCallback(const integrated_navigation_driver::Spanlog_INSPVAXB ::ConstPtr msg_in)
+void parseINSPVAXBmsgCallback(const integrated_navigation_reader::Spanlog_INSPVAXB ::ConstPtr msg_in)
 {
     auto msg_out = new sensor_msgs::NavSatFix();
 

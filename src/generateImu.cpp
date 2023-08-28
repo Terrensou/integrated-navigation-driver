@@ -5,11 +5,11 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include "integrated_navigation_driver/NMEA_GPFPD.h"
-#include "integrated_navigation_driver/NMEA_GTIMU.h"
-#include "integrated_navigation_driver/NMEA_GPCHC.h"
-#include "integrated_navigation_driver/NMEA_NVSTD.h"
-#include "integrated_navigation_driver/Spanlog_INSPVAXB.h"
+#include "integrated_navigation_reader/NMEA_GPFPD.h"
+#include "integrated_navigation_reader/NMEA_GTIMU.h"
+#include "integrated_navigation_reader/NMEA_GPCHC.h"
+#include "integrated_navigation_reader/NMEA_NVSTD.h"
+#include "integrated_navigation_reader/Spanlog_INSPVAXB.h"
 #include "utility.h"
 
 #include <cstring>
@@ -69,7 +69,7 @@ public:
 
     }
 
-    void parseGPCHCmsgCallback(const integrated_navigation_driver::NMEA_GPCHC::ConstPtr msg_in)
+    void parseGPCHCmsgCallback(const integrated_navigation_reader::NMEA_GPCHC::ConstPtr msg_in)
     {
         auto msg_out = new sensor_msgs::Imu();
 
@@ -107,7 +107,7 @@ public:
         delete(msg_out);
     }
 
-    void parseGTIMUmsgCallback(const integrated_navigation_driver::NMEA_GTIMU::ConstPtr msg_in)
+    void parseGTIMUmsgCallback(const integrated_navigation_reader::NMEA_GTIMU::ConstPtr msg_in)
     {
         auto msg_out = new sensor_msgs::Imu();
 
@@ -145,7 +145,7 @@ public:
         delete(msg_out);
     }
 
-    void parseGPFPDmsgGTIMUmsgCallback(const integrated_navigation_driver::NMEA_GPFPD::ConstPtr& msgGPFPD_in, const integrated_navigation_driver::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
+    void parseGPFPDmsgGTIMUmsgCallback(const integrated_navigation_reader::NMEA_GPFPD::ConstPtr& msgGPFPD_in, const integrated_navigation_reader::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
     {
         auto msg_out = new sensor_msgs::Imu();
 
@@ -184,7 +184,7 @@ public:
         delete(msg_out);
     }
 
-    void parseINSPVAXBmsgGTIMUmsgCallback(const integrated_navigation_driver::Spanlog_INSPVAXB::ConstPtr& msgINSPVAXB_in, const integrated_navigation_driver::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
+    void parseINSPVAXBmsgGTIMUmsgCallback(const integrated_navigation_reader::Spanlog_INSPVAXB::ConstPtr& msgINSPVAXB_in, const integrated_navigation_reader::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
     {
         auto msg_out = new sensor_msgs::Imu();
 
@@ -226,7 +226,7 @@ public:
         delete(msg_out);
     }
 
-    void parseNVSTDmsgGPFPDmsgGTIMUmsgCallback(const integrated_navigation_driver::NMEA_NVSTD::ConstPtr& msgNVSTD_in, const integrated_navigation_driver::NMEA_GPFPD::ConstPtr& msgGPFPD_in, const integrated_navigation_driver::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
+    void parseNVSTDmsgGPFPDmsgGTIMUmsgCallback(const integrated_navigation_reader::NMEA_NVSTD::ConstPtr& msgNVSTD_in, const integrated_navigation_reader::NMEA_GPFPD::ConstPtr& msgGPFPD_in, const integrated_navigation_reader::NMEA_GTIMU::ConstPtr& msgGTIMU_in)
     {
         auto msg_out = new sensor_msgs::Imu();
 
@@ -323,19 +323,19 @@ private:
     bool use_gnss_time = false;
     int leap_second = 0;
 
-    message_filters::Subscriber<integrated_navigation_driver::NMEA_GPFPD> gpfpd_sub;
-    message_filters::Subscriber<integrated_navigation_driver::NMEA_GTIMU> gtimu_sub;
-    typedef message_filters::sync_policies::ApproximateTime<integrated_navigation_driver::NMEA_GPFPD, integrated_navigation_driver::NMEA_GTIMU> GPFPD_GTIMU_Policy;
+    message_filters::Subscriber<integrated_navigation_reader::NMEA_GPFPD> gpfpd_sub;
+    message_filters::Subscriber<integrated_navigation_reader::NMEA_GTIMU> gtimu_sub;
+    typedef message_filters::sync_policies::ApproximateTime<integrated_navigation_reader::NMEA_GPFPD, integrated_navigation_reader::NMEA_GTIMU> GPFPD_GTIMU_Policy;
     typedef message_filters::Synchronizer<GPFPD_GTIMU_Policy> GPFPD_GTIMU_Sync;
     boost::shared_ptr<GPFPD_GTIMU_Sync> fpd_imu_sync;
 
-    message_filters::Subscriber<integrated_navigation_driver::Spanlog_INSPVAXB> inspvaxb_sub;
-    typedef message_filters::sync_policies::ApproximateTime<integrated_navigation_driver::Spanlog_INSPVAXB, integrated_navigation_driver::NMEA_GTIMU> INSPVAXB_GTIMU_Policy;
+    message_filters::Subscriber<integrated_navigation_reader::Spanlog_INSPVAXB> inspvaxb_sub;
+    typedef message_filters::sync_policies::ApproximateTime<integrated_navigation_reader::Spanlog_INSPVAXB, integrated_navigation_reader::NMEA_GTIMU> INSPVAXB_GTIMU_Policy;
     typedef message_filters::Synchronizer<INSPVAXB_GTIMU_Policy> INSPVAXB_GTIMU_Sync;
     boost::shared_ptr<INSPVAXB_GTIMU_Sync> inspvaxb_imu_sync;
 
-    message_filters::Subscriber<integrated_navigation_driver::NMEA_NVSTD> nvstd_sub;
-    typedef message_filters::sync_policies::ApproximateTime<integrated_navigation_driver::NMEA_NVSTD, integrated_navigation_driver::NMEA_GPFPD, integrated_navigation_driver::NMEA_GTIMU> NVSTD_GPFPD_GTIMU_Policy;
+    message_filters::Subscriber<integrated_navigation_reader::NMEA_NVSTD> nvstd_sub;
+    typedef message_filters::sync_policies::ApproximateTime<integrated_navigation_reader::NMEA_NVSTD, integrated_navigation_reader::NMEA_GPFPD, integrated_navigation_reader::NMEA_GTIMU> NVSTD_GPFPD_GTIMU_Policy;
     typedef message_filters::Synchronizer<NVSTD_GPFPD_GTIMU_Policy> NVSTD_GPFPD_GTIMU_Sync;
     boost::shared_ptr<NVSTD_GPFPD_GTIMU_Sync> nvstd_fpd_imu_sync;
 

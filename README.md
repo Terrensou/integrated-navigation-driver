@@ -4,13 +4,13 @@ ROS Humble, read NMEA message(currently support: GPCHC, GPFPD, GPFPS, GPFPS_BIN,
 ```bash
 sudo apt install ros-melodic-nmea-navsat-driver libgps-dev
 mkdir src && cd src
-git clone https://github.com/Terrensou/integrated-navigation-driver.git
+git clone https://github.com/Terrensou/integrated-navigation-reader.git
 git clone https://github.com/nobleo/rviz_satellite.git
 cd .. && catkin_make
 ```
 ## Run
 ```bash
-roslaunch integrated_navigation_driver integrated_navigation_pub.launch
+roslaunch integrated_navigation_reader integrated_navigation_pub.launch
 ```
 ## Config
 Please see [config/config.yaml](config/config.yaml). 

@@ -5,11 +5,11 @@
 #include <std_msgs/String.h>
 #include <nmea_msgs/Sentence.h>
 
-#include "integrated_navigation_driver/NMEA_GPFPD.h"
-#include "integrated_navigation_driver/NMEA_GTIMU.h"
-#include "integrated_navigation_driver/NMEA_GPGGA.h"
-#include "integrated_navigation_driver/NMEA_NVSTD.h"
-#include "integrated_navigation_driver/NMEA_GPCHC.h"
+#include "integrated_navigation_reader/NMEA_GPFPD.h"
+#include "integrated_navigation_reader/NMEA_GTIMU.h"
+#include "integrated_navigation_reader/NMEA_GPGGA.h"
+#include "integrated_navigation_reader/NMEA_NVSTD.h"
+#include "integrated_navigation_reader/NMEA_GPCHC.h"
 
 #include <cmath>
 #include <cstring>
@@ -35,23 +35,23 @@ public:
 
         if (use_GPFPD)
         {
-            GPFPD_pub = nh_.advertise<integrated_navigation_driver::NMEA_GPFPD>("/nmea/gpfpd", 10);
+            GPFPD_pub = nh_.advertise<integrated_navigation_reader::NMEA_GPFPD>("/nmea/gpfpd", 10);
         }
         if (use_GTIMU)
         {
-            GTIMU_pub = nh_.advertise<integrated_navigation_driver::NMEA_GTIMU>("/nmea/gtimu", 10);
+            GTIMU_pub = nh_.advertise<integrated_navigation_reader::NMEA_GTIMU>("/nmea/gtimu", 10);
         }
         if (use_GPGGA)
         {
-            GPGGA_pub = nh_.advertise<integrated_navigation_driver::NMEA_GPGGA>("/nmea/gpgga", 10);
+            GPGGA_pub = nh_.advertise<integrated_navigation_reader::NMEA_GPGGA>("/nmea/gpgga", 10);
         }
         if (use_NVSTD)
         {
-            NVSTD_pub = nh_.advertise<integrated_navigation_driver::NMEA_NVSTD>("/nmea/nvstd", 10);
+            NVSTD_pub = nh_.advertise<integrated_navigation_reader::NMEA_NVSTD>("/nmea/nvstd", 10);
         }
         if (use_GPCHC)
         {
-            GPCHC_pub = nh_.advertise<integrated_navigation_driver::NMEA_GPCHC>("/nmea/gpchc", 10);
+            GPCHC_pub = nh_.advertise<integrated_navigation_reader::NMEA_GPCHC>("/nmea/gpchc", 10);
         }
 
     }
@@ -64,11 +64,11 @@ public:
         bool detected_GPGGA = false;
         bool detected_NVSTD = false;
         bool detected_GPCHC = false;
-        integrated_navigation_driver::NMEA_GPFPD* pGPFPD = nullptr;
-        integrated_navigation_driver::NMEA_GTIMU* pGTIMU = nullptr;
-        integrated_navigation_driver::NMEA_GPGGA* pGPGGA = nullptr;
-        integrated_navigation_driver::NMEA_NVSTD* pNVSTD = nullptr;
-        integrated_navigation_driver::NMEA_GPCHC* pGPCHC = nullptr;
+        integrated_navigation_reader::NMEA_GPFPD* pGPFPD = nullptr;
+        integrated_navigation_reader::NMEA_GTIMU* pGTIMU = nullptr;
+        integrated_navigation_reader::NMEA_GPGGA* pGPGGA = nullptr;
+        integrated_navigation_reader::NMEA_NVSTD* pNVSTD = nullptr;
+        integrated_navigation_reader::NMEA_GPCHC* pGPCHC = nullptr;
 
         const std::string nmea_str = nmea_msg->sentence;
         if (nmea_str.find("$GPFPD") != std::string::npos || nmea_str.find("$gpfpd") != std::string::npos)
@@ -95,7 +95,7 @@ public:
 
         if (use_GPFPD && detected_GPFPD)
         {
-            pGPFPD = new integrated_navigation_driver::NMEA_GPFPD();
+            pGPFPD = new integrated_navigation_reader::NMEA_GPFPD();
             parseGPFPD2msg(nmea_str, *pGPFPD);
             if (!pGPFPD)
             {
@@ -110,7 +110,7 @@ public:
 
         if (use_GTIMU && detected_GTIMU)
         {
-            pGTIMU = new integrated_navigation_driver::NMEA_GTIMU();
+            pGTIMU = new integrated_navigation_reader::NMEA_GTIMU();
             parseGTIMU2msg(nmea_str, *pGTIMU);
             if (!pGTIMU)
             {
@@ -125,7 +125,7 @@ public:
 
         if (use_GPGGA && detected_GPGGA)
         {
-            pGPGGA = new integrated_navigation_driver::NMEA_GPGGA();
+            pGPGGA = new integrated_navigation_reader::NMEA_GPGGA();
             parseGPGGA2msg(nmea_str, *pGPGGA);
             if (!pGPGGA)
             {
@@ -141,7 +141,7 @@ public:
 
         if (use_NVSTD && detected_NVSTD)
         {
-            pNVSTD = new integrated_navigation_driver::NMEA_NVSTD();
+            pNVSTD = new integrated_navigation_reader::NMEA_NVSTD();
             parseNVSTD2msg(nmea_str, *pNVSTD);
             if (!pNVSTD)
             {
@@ -156,7 +156,7 @@ public:
 
         if (use_GPCHC && detected_GPCHC)
         {
-            pGPCHC = new integrated_navigation_driver::NMEA_GPCHC();
+            pGPCHC = new integrated_navigation_reader::NMEA_GPCHC();
             parseGPCHC2msg(nmea_str, *pGPCHC);
             if (!pGPCHC)
             {
@@ -177,7 +177,7 @@ public:
 
     }
 
-    static void parseGPFPD2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_GPFPD& msg_out)
+    static void parseGPFPD2msg(const std::string& msg_in, integrated_navigation_reader::NMEA_GPFPD& msg_out)
     {
         std::vector<std::string> vSub;
         boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
@@ -221,7 +221,7 @@ public:
 
     }
 
-    static void parseGTIMU2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_GTIMU& msg_out)
+    static void parseGTIMU2msg(const std::string& msg_in, integrated_navigation_reader::NMEA_GTIMU& msg_out)
     {
         std::vector<std::string> vSub;
         boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
@@ -254,7 +254,7 @@ public:
 
     }
 
-    static void parseGPGGA2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_GPGGA& msg_out)
+    static void parseGPGGA2msg(const std::string& msg_in, integrated_navigation_reader::NMEA_GPGGA& msg_out)
     {
         std::vector<std::string> vSub;
         boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
@@ -277,53 +277,53 @@ public:
         msg_out.latitude.append(vSub[2]);
         if (vSub[3].c_str() == "S" || vSub[3].c_str() == "s")
         {
-            msg_out.latitude_direction = integrated_navigation_driver::NMEA_GPGGA::LATITUDE_SOUTH;
+            msg_out.latitude_direction = integrated_navigation_reader::NMEA_GPGGA::LATITUDE_SOUTH;
         }
         else
         {
-            msg_out.latitude_direction = integrated_navigation_driver::NMEA_GPGGA::LATITUDE_NORTH;
+            msg_out.latitude_direction = integrated_navigation_reader::NMEA_GPGGA::LATITUDE_NORTH;
         }
         msg_out.longitude.append(vSub[4]);
         if (vSub[5].c_str() == "W" || vSub[5].c_str() == "w")
         {
-            msg_out.longitude_direction = integrated_navigation_driver::NMEA_GPGGA::LONGITUDE_WEST;
+            msg_out.longitude_direction = integrated_navigation_reader::NMEA_GPGGA::LONGITUDE_WEST;
         }
         else
         {
-            msg_out.longitude_direction = integrated_navigation_driver::NMEA_GPGGA::LONGITUDE_EAST;
+            msg_out.longitude_direction = integrated_navigation_reader::NMEA_GPGGA::LONGITUDE_EAST;
         }
 
         switch (boost::numeric_cast<std::uint8_t>(strtoul(vSub[6].c_str(), &ptr_t, 10)))
         {
             case 0:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_FIX_INVALID;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_FIX_INVALID;
                 break;
             case 1:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_SINGLE_POINT;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_SINGLE_POINT;
                 break;
             case 2:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_PSEUDORANGE_DIFFERENTIAL;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_PSEUDORANGE_DIFFERENTIAL;
                 break;
             case 4:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_FIX_SOLUTION;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_FIX_SOLUTION;
                 break;
             case 5:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_FLOATING_SOLUTION;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_FLOATING_SOLUTION;
                 break;
             case 6:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_RECKONING_MODE;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_RECKONING_MODE;
                 break;
             case 7:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_MANUAL_FIXED;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_MANUAL_FIXED;
                 break;
             case 8:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_SIMULATOR_MODE;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_SIMULATOR_MODE;
                 break;
             case 9:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_WAAS;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_WAAS;
                 break;
             default:
-                msg_out.gnss_quality = integrated_navigation_driver::NMEA_GPGGA::GNSS_FIX_INVALID;
+                msg_out.gnss_quality = integrated_navigation_reader::NMEA_GPGGA::GNSS_FIX_INVALID;
         }
 
         msg_out.number_of_using_satellites = boost::numeric_cast<std::uint8_t>(strtoul(vSub[7].c_str(), &ptr_t, 10));
@@ -333,37 +333,37 @@ public:
         msg_out.altitude = boost::numeric_cast<double>(strtof64(vSub[9].c_str(), &ptr_t));
         if (vSub[10].c_str() == "KM" || vSub[10].c_str() == "km")
         {
-            msg_out.altitude_units = integrated_navigation_driver::NMEA_GPGGA::UNITS_KILOMETER;
+            msg_out.altitude_units = integrated_navigation_reader::NMEA_GPGGA::UNITS_KILOMETER;
         }
         else if (vSub[10].c_str() == "DM" || vSub[10].c_str() == "dm")
         {
-            msg_out.altitude_units = integrated_navigation_driver::NMEA_GPGGA::UNITS_DECIMETER;
+            msg_out.altitude_units = integrated_navigation_reader::NMEA_GPGGA::UNITS_DECIMETER;
         }
         else if (vSub[10].c_str() == "CM" || vSub[10].c_str() == "cm")
         {
-            msg_out.altitude_units = integrated_navigation_driver::NMEA_GPGGA::UNITS_CENTIMETER;
+            msg_out.altitude_units = integrated_navigation_reader::NMEA_GPGGA::UNITS_CENTIMETER;
         }
         else
         {
-            msg_out.altitude_units = integrated_navigation_driver::NMEA_GPGGA::UNITS_METER;
+            msg_out.altitude_units = integrated_navigation_reader::NMEA_GPGGA::UNITS_METER;
         }
 
         msg_out.undulation = boost::numeric_cast<double>(strtof64(vSub[11].c_str(), &ptr_t));
         if (vSub[12].c_str() == "KM" || vSub[12].c_str() == "km")
         {
-            msg_out.undulation_units = integrated_navigation_driver::NMEA_GPGGA::UNITS_KILOMETER;
+            msg_out.undulation_units = integrated_navigation_reader::NMEA_GPGGA::UNITS_KILOMETER;
         }
         else if (vSub[12].c_str() == "DM" || vSub[12].c_str() == "dm")
         {
-            msg_out.undulation_units = integrated_navigation_driver::NMEA_GPGGA::UNITS_DECIMETER;
+            msg_out.undulation_units = integrated_navigation_reader::NMEA_GPGGA::UNITS_DECIMETER;
         }
         else if (vSub[12].c_str() == "CM" || vSub[12].c_str() == "cm")
         {
-            msg_out.undulation_units = integrated_navigation_driver::NMEA_GPGGA::UNITS_CENTIMETER;
+            msg_out.undulation_units = integrated_navigation_reader::NMEA_GPGGA::UNITS_CENTIMETER;
         }
         else
         {
-            msg_out.undulation_units = integrated_navigation_driver::NMEA_GPGGA::UNITS_METER;
+            msg_out.undulation_units = integrated_navigation_reader::NMEA_GPGGA::UNITS_METER;
         }
 
         if (msg_out.gnss_quality > 1 && msg_out.gnss_quality < 6){
@@ -373,7 +373,7 @@ public:
 
     }
 
-    static void parseNVSTD2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_NVSTD& msg_out)
+    static void parseNVSTD2msg(const std::string& msg_in, integrated_navigation_reader::NMEA_NVSTD& msg_out)
     {
         std::vector<std::string> vSub;
         boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
@@ -404,7 +404,7 @@ public:
 
     }
 
-    static void parseGPCHC2msg(const std::string& msg_in, integrated_navigation_driver::NMEA_GPCHC& msg_out)
+    static void parseGPCHC2msg(const std::string& msg_in, integrated_navigation_reader::NMEA_GPCHC& msg_out)
     {
         std::vector<std::string> vSub;
         boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
@@ -465,27 +465,27 @@ public:
     }
 
 
-    void pubGPFPD(const integrated_navigation_driver::NMEA_GPFPD* msg)
+    void pubGPFPD(const integrated_navigation_reader::NMEA_GPFPD* msg)
     {
         GPFPD_pub.publish(*msg);
     }
 
-    void pubGTIMU(const integrated_navigation_driver::NMEA_GTIMU* msg)
+    void pubGTIMU(const integrated_navigation_reader::NMEA_GTIMU* msg)
     {
         GTIMU_pub.publish(*msg);
     }
 
-    void pubGPGGA(const integrated_navigation_driver::NMEA_GPGGA* msg)
+    void pubGPGGA(const integrated_navigation_reader::NMEA_GPGGA* msg)
     {
         GPGGA_pub.publish(*msg);
     }
 
-    void pubNVSTD(const integrated_navigation_driver::NMEA_NVSTD* msg)
+    void pubNVSTD(const integrated_navigation_reader::NMEA_NVSTD* msg)
     {
         NVSTD_pub.publish(*msg);
     }
 
-    void pubGPCHC(const integrated_navigation_driver::NMEA_GPCHC* msg)
+    void pubGPCHC(const integrated_navigation_reader::NMEA_GPCHC* msg)
     {
         GPCHC_pub.publish(*msg);
     }
