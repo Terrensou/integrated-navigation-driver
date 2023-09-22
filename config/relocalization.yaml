@@ -1,6 +1,7 @@
 # Define how to read serial
 Nmea_serial_reader_node:
   port: /dev/ttyACM0
+#  port: /dev/ttyUSB0
   baud: 115200
   timeout: 1000
 
@@ -10,16 +11,19 @@ Binary_serial_reader_node:
   GPFPS_BIN: false
   GTIMU: true
   GTIMU_BIN: false
+  GPGGA: false
+  GPFPD: true
+  GPCHC: false
 
 Nmea_parser_node:
-  GPFPD: false
+  GPFPD: true
   GTIMU: true
   GPGGA: false
   NVSTD: false
   GPCHC: false
 
 Spanlog_parser_node:
-  INSPVAXA: false
+  INSPVAXA: true
 
 # Used for TimeReference message, and NavsatFix & Imu message if "use_gnss_time" is true.
 time_set:
@@ -28,17 +32,19 @@ time_set:
 
 NavsatFix_generator_node:
   NavsatFix_generate_from: INSPVAXB  # optional: GPCHC, GPFPD, GPGGA, INSPVAXB
-  frame_id: base_link # for rviz GNSS map visualization, we should use "base_link".
-  use_gnss_time: false # NavsatFix message header stamp is gnss time
+  frame_id: gnss_link # for rviz GNSS map visualization, we should use "base_link".
+  use_gnss_time: true # NavsatFix message header stamp is gnss time
 
 
 Imu_generator_node:
   Imu_generate_from: INSPVAXB-GTIMU  # optional: GPCHC, GPFPD-GTIMU, INSPVAXB-GTIMU, NVSTD-GPFPD-GTIMU
-  frame_id: base_link
-  use_gnss_time: false # IMU message header stamp is gnss time
+  frame_id: imu_link
+  use_gnss_time: true # IMU message header stamp is gnss time
 
 # In case of gnss point refer to imu original point. No external matrix.
 Odometry_generator_node:
-  show_altitude: false
+  coordinate_type: UTM
+  show_altitude: true
   parent_frame_id: map
-  child_frame_id: base_link
+  child_frame_id: imu_link
+  publish_tf: false

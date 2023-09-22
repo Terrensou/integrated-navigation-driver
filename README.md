@@ -25,3 +25,6 @@ Please see [config/config.yaml](config/config.yaml).
 
 ## known issue 
 1. If Imu_generate_from: GPFPD-GTIMU with visualization, could cause 'Invalid argument passed to canTransform argument source_frame in tf2 frame_ids cannot be empty'
+
+## Check 
+1. check NMEA output yaw left/right handed

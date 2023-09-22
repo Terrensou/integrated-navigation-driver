@@ -176,6 +176,7 @@ void parseGPCHCmsgCallback(const integrated_navigation_reader::NMEA_GPCHC::Const
     auto altitude = msg_in->altitude;
     fillBasicNavsatFixmsg(*msg_out, nanosecond, latitude, longitude, altitude);
 
+    msg_out->position_covariance[0] = -1;
     msg_out->position_covariance_type = sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN;
 
     pubNavsatFix(msg_out);
@@ -254,9 +255,9 @@ void parseINSPVAXBmsgCallback(const integrated_navigation_reader::Spanlog_INSPVA
     }
 
     if (msg_in->position_type > 0) {
-        if ((msg_in->position_type >= 68 && msg_in->position_type <= 80) || msg_in->position_type == 52) {
+        if ((msg_in->position_type >= 68 && msg_in->position_type <= 80) || msg_in->position_type == 52 || msg_in->position_type == 18) {
             msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_SBAS_FIX;
-        } else if ((msg_in->position_type >= 48 || msg_in->position_type >= 50) || msg_in->position_type == 56) {
+        } else if ((msg_in->position_type >= 48 || msg_in->position_type <= 51) || msg_in->position_type == 56) {
             msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_GBAS_FIX;
         } else {
             msg_out->status.status = sensor_msgs::NavSatStatus::STATUS_FIX;

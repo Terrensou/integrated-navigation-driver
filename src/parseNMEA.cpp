@@ -31,7 +31,7 @@ public:
         nh_local.getParam("NVSTD", use_NVSTD);
         nh_local.getParam("GPCHC", use_GPCHC);
 
-        spanlog_sentense_sub = nh_.subscribe("/nmea_sentence", 1, &NMEA_Parser::NMEAReader, this, ros::TransportHints().tcpNoDelay());
+        spanlog_sentense_sub = nh_.subscribe("/nmea_sentence", 1000, &NMEA_Parser::NMEAReader, this, ros::TransportHints().tcpNoDelay());
 
         if (use_GPFPD)
         {
@@ -73,10 +73,12 @@ public:
         const std::string nmea_str = nmea_msg->sentence;
         if (nmea_str.find("$GPFPD") != std::string::npos || nmea_str.find("$gpfpd") != std::string::npos)
         {
+//            ROS_WARN("$GPFPD");
             detected_GPFPD = true;
         }
         if (nmea_str.find("$GTIMU") != std::string::npos || nmea_str.find("$gtimu") != std::string::npos)
         {
+//            ROS_WARN("$GTIMU");
             detected_GTIMU = true;
         }
         if (nmea_str.find("$GPGGA") != std::string::npos || nmea_str.find("$gpgga") != std::string::npos)
@@ -406,10 +408,11 @@ public:
 
     static void parseGPCHC2msg(const std::string& msg_in, integrated_navigation_reader::NMEA_GPCHC& msg_out)
     {
+//        ROS_WARN("%s",&msg_in);
         std::vector<std::string> vSub;
         boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
 
-        if (vSub.size() < 24)
+        if (vSub.size() < 22)
         {
             ROS_WARN("Can not Parse NMEA GPCHC Message!");
             return;

@@ -32,6 +32,7 @@ public:
         nh_local.getParam("GTIMU_BIN", use_GTIMU_BIN);
         nh_local.getParam("GPGGA", use_GPGGA);
         nh_local.getParam("GPFPD", use_GPFPD);
+        nh_local.getParam("GPCHC", use_GPCHC);
 
         nmea_pub = nh_.advertise<nmea_msgs::Sentence>("/nmea/sentence", 10);
         spanlog_pub = nh_.advertise<nmea_msgs::Sentence>("/spanlog/sentence", 10);
@@ -136,6 +137,12 @@ public:
                 buffer.clear();
                 continue;
             }
+            if (buffer.find(gpchc) != std::string::npos && use_GPCHC) {
+//                std::cout << "Detected: gtimu" << std::endl;
+                parseGPCHC(p_time);
+                buffer.clear();
+                continue;
+            }
 
         }
     }
@@ -173,6 +180,7 @@ private:
     bool use_GTIMU_BIN = false;
     bool use_GPGGA = false;
     bool use_GPFPD = false;
+    bool use_GPCHC = false;
 
     std::string inspvaxb;
     std::string gpfps_bin;
@@ -181,6 +189,7 @@ private:
     const std::string gtimu = "$GTIMU";
     const std::string gpgga = "$GPGGA";
     const std::string gpfpd = "$GPFPD";
+    const std::string gpchc = "$GPCHC";
 
     void parseINSPVAXB(const ros::Time *now) {
 
@@ -463,6 +472,21 @@ private:
 
         std::string data = "$GPFPD";
         serialHandle.readline(data, 128, "\r\n");
+        data.pop_back();
+        data.pop_back();
+
+        msg_out.sentence = data;
+
+        pubNMEA(&msg_out);
+    }
+
+    void parseGPCHC(const ros::Time *now) {
+        nmea_msgs::Sentence msg_out;
+        msg_out.header.stamp = *now;
+        msg_out.header.frame_id = "gnss_link";
+
+        std::string data = "$GPCHC";
+        serialHandle.readline(data, 256, "\r\n");
         data.pop_back();
         data.pop_back();
 

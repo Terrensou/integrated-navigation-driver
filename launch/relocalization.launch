@@ -1,13 +1,9 @@
 <launch>
-    <rosparam command="load" file="$(find integrated_navigation_reader)/config/Newton_N2_config.yaml" />
+    <rosparam command="load" file="$(find integrated_navigation_reader)/config/relocalization.yaml" />
     <arg name="NMEA_pub_topic" default="/nmea/sentence" />
 
     <!-- NMEA Serial Driver -->
-<!--    <node name="nmea_serial_reader_node" pkg="nmea_navsat_reader" type="nmea_topic_serial_reader" required="true">-->
-<!--        <remap from="/nmea_sentence" to="$(arg NMEA_pub_topic)" />&ndash;&gt;-->
-<!--    </node>-->
     <node name="Binary_serial_reader_node" pkg="integrated_navigation_reader" type="binary_serial_parser_node" required="true" output="screen">
-        <!--        <remap from="/nmea_sentence" to="$(arg NMEA_pub_topic)" />&ndash;&gt;-->
     </node>
 
     <node name="Nmea_parser_node" pkg="integrated_navigation_reader" type="nmea_parser_node" required="true">
@@ -22,6 +18,7 @@
 
     <node name="Odometry_generator_node" pkg="integrated_navigation_reader" type="odom_generator_node" respawn="true" output="screen">
     </node>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_odom" args="0 0 0 0 0 0 world integrated_nav_odom" />
 
     <!--  GNSS visualization  -->
 <!--    <node pkg="rostopic" type="rostopic" name="fake_gps_fix"-->

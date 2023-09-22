@@ -30,6 +30,7 @@ public:
         ROS_WARN("parent_frame_id:%s",odomParentFrameId.c_str());
         nh_local.getParam("child_frame_id", odomChildFrameId);
         nh_local.getParam("coordinate_type", coordinate_type);
+        nh_local.getParam("publish_tf", publishTF);
 
         odom_pub = nh_.advertise<nav_msgs::Odometry>("/integrated_nav/Odom", 10);
         path_pub = nh_.advertise<nav_msgs::Path>("/integrated_nav/Path",10, true);
@@ -57,7 +58,7 @@ public:
 
         // filter nan pLLA.
         if (std::isnan(msgNavsatFix_in->latitude + msgNavsatFix_in->longitude + msgNavsatFix_in->altitude)) {
-            ROS_ERROR("Position pLLA is NAN.");
+            ROS_ERROR("Position LLA is NAN.");
             return;
         }
 
@@ -125,11 +126,29 @@ public:
         msg_out->pose.pose.orientation = msgIMU_in->orientation;
 
         // x, y, z, pitch, roll, yaw
-        msg_out->pose.covariance[0] = msgNavsatFix_in->position_covariance[0];
-        msg_out->pose.covariance[7] = msgNavsatFix_in->position_covariance[4];
-        msg_out->pose.covariance[14] = msgNavsatFix_in->position_covariance[8];
+        if (msgNavsatFix_in->position_covariance_type == sensor_msgs::NavSatFix::COVARIANCE_TYPE_UNKNOWN) {
+            msg_out->pose.covariance[0] = -1;
+            msg_out->pose.covariance[7] = -1;
+            msg_out->pose.covariance[14] = -1;
+        } else {
+            msg_out->pose.covariance[0] = msgNavsatFix_in->position_covariance[0];
+            msg_out->pose.covariance[1] = msgNavsatFix_in->position_covariance[1];
+            msg_out->pose.covariance[2] = msgNavsatFix_in->position_covariance[2];
+            msg_out->pose.covariance[6] = msgNavsatFix_in->position_covariance[3];
+            msg_out->pose.covariance[7] = msgNavsatFix_in->position_covariance[4];
+            msg_out->pose.covariance[8] = msgNavsatFix_in->position_covariance[5];
+            msg_out->pose.covariance[12] = msgNavsatFix_in->position_covariance[6];
+            msg_out->pose.covariance[13] = msgNavsatFix_in->position_covariance[7];
+            msg_out->pose.covariance[14] = msgNavsatFix_in->position_covariance[8];
+        }
         msg_out->pose.covariance[21] = msgIMU_in->orientation_covariance[0];
+        msg_out->pose.covariance[22] = msgIMU_in->orientation_covariance[1];
+        msg_out->pose.covariance[23] = msgIMU_in->orientation_covariance[2];
+        msg_out->pose.covariance[27] = msgIMU_in->orientation_covariance[3];
         msg_out->pose.covariance[28] = msgIMU_in->orientation_covariance[4];
+        msg_out->pose.covariance[29] = msgIMU_in->orientation_covariance[5];
+        msg_out->pose.covariance[33] = msgIMU_in->orientation_covariance[6];
+        msg_out->pose.covariance[34] = msgIMU_in->orientation_covariance[7];
         msg_out->pose.covariance[35] = msgIMU_in->orientation_covariance[8];
 
         // refer to LIO_SAM_6axis: https://github.com/JokerJohn/LIO_SAM_6AXIS/blob/main/LIO-SAM-6AXIS/src/simpleGpsOdom.cpp
@@ -138,9 +157,9 @@ public:
 //        msg_out->pose.covariance[3] = z;
 //        msg_out->pose.covariance[4] = msgNavsatFix_in->status.status;
 
-        msg_out->twist.twist.linear.x = msgIMU_in->linear_acceleration.x;
-        msg_out->twist.twist.linear.y = msgIMU_in->linear_acceleration.y;
-        msg_out->twist.twist.linear.z = msgIMU_in->linear_acceleration.z;
+        msg_out->twist.twist.linear = msgIMU_in->linear_acceleration;
+        msg_out->twist.twist.angular = msgIMU_in->angular_velocity;
+        msg_out->twist.covariance[0] = -1;
 
         sendOdomTF(odom_trans);
         pubOdom(msg_out);
@@ -158,13 +177,25 @@ public:
     }
 
     void generatePathFromOdometry(const nav_msgs::Odometry * msg_in){
+
+        std::string path_frame;
+        if (coordinate_type == "ENU") {
+            path_frame = "map";
+        } else if (coordinate_type == "UTM") {
+            path_frame = "world";
+        } else if (coordinate_type == "LLA") {
+            path_frame = "world";
+        }
+
         if(path_init_flag){
             odom_path.header = msg_in->header;
+            odom_path.header.frame_id = path_frame;
             path_init_flag = false;
         }
 
         geometry_msgs::PoseStamped pose_stamped;
         pose_stamped.header = msg_in->header;
+        pose_stamped.header.frame_id = path_frame;
         pose_stamped.pose = msg_in->pose.pose;
 
         odom_path.poses.push_back(pose_stamped);
@@ -182,7 +213,9 @@ public:
 
     void sendOdomTF(const geometry_msgs::TransformStamped * msg)
     {
-        odom_broadcaster.sendTransform(*msg);
+        if (publishTF) {
+            odom_broadcaster.sendTransform(*msg);
+        }
     }
 
 
@@ -207,6 +240,7 @@ private:
     bool path_init_flag = true;
     std::string coordinate_type = "LLA";
     bool initOdometry = false;
+    bool publishTF = false;
 
     message_filters::Subscriber<sensor_msgs::NavSatFix> navsatfix_sub;
     message_filters::Subscriber<sensor_msgs::Imu> imu_sub;

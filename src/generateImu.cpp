@@ -86,15 +86,15 @@ public:
             nanosecond = local_nanosecond;
         }
 
-        auto yaw = DEG2RAD(msg_in->heading);
+        auto yaw = DEG2RAD(-msg_in->heading + 90.0);
         auto pitch = DEG2RAD(msg_in->pitch);
         auto roll = DEG2RAD(msg_in->roll);
         auto angular_velocity_x = DEG2RAD(msg_in->gyroscope_x);
         auto angular_velocity_y = DEG2RAD(msg_in->gyroscope_y);
         auto angular_velocity_z = DEG2RAD(msg_in->gyroscope_z);
-        auto linear_acceleration_x = msg_in->acceleration_x * 9.8;
-        auto linear_acceleration_y = msg_in->acceleration_y * 9.8;
-        auto linear_acceleration_z = msg_in->acceleration_z * 9.8;
+        auto linear_acceleration_x = msg_in->acceleration_x * 9.8066;
+        auto linear_acceleration_y = msg_in->acceleration_y * 9.8066;
+        auto linear_acceleration_z = msg_in->acceleration_z * 9.8066;
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
 
         msg_out->orientation_covariance[0] = -1;
@@ -130,9 +130,9 @@ public:
         auto angular_velocity_x = DEG2RAD(msg_in->gyroscope_x);
         auto angular_velocity_y = DEG2RAD(msg_in->gyroscope_y);
         auto angular_velocity_z = DEG2RAD(msg_in->gyroscope_z);
-        auto linear_acceleration_x = msg_in->acceleration_x * 9.8;
-        auto linear_acceleration_y = msg_in->acceleration_y * 9.8;
-        auto linear_acceleration_z = msg_in->acceleration_z * 9.8;
+        auto linear_acceleration_x = msg_in->acceleration_x * 9.8066;
+        auto linear_acceleration_y = msg_in->acceleration_y * 9.8066;
+        auto linear_acceleration_z = msg_in->acceleration_z * 9.8066;
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
 
         msg_out->orientation_covariance[0] = -1;
@@ -162,15 +162,15 @@ public:
             nanosecond = local_nanosecond;
         }
 
-        auto yaw = DEG2RAD(msgGPFPD_in->heading);
+        auto yaw = DEG2RAD(-msgGPFPD_in->heading + 90.0);
         auto pitch = DEG2RAD(msgGPFPD_in->pitch);
         auto roll = DEG2RAD(msgGPFPD_in->roll);
         auto angular_velocity_x = DEG2RAD(msgGTIMU_in->gyroscope_x);
         auto angular_velocity_y = DEG2RAD(msgGTIMU_in->gyroscope_y);
         auto angular_velocity_z = DEG2RAD(msgGTIMU_in->gyroscope_z);
-        auto linear_acceleration_x = msgGTIMU_in->acceleration_x * 9.8;
-        auto linear_acceleration_y = msgGTIMU_in->acceleration_y * 9.8;
-        auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8;
+        auto linear_acceleration_x = msgGTIMU_in->acceleration_x * 9.8066;
+        auto linear_acceleration_y = msgGTIMU_in->acceleration_y * 9.8066;
+        auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8066;
 
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
 
@@ -201,15 +201,16 @@ public:
             nanosecond = local_nanosecond;
         }
 
-        auto yaw = DEG2RAD(msgINSPVAXB_in->azimuth);
+        // follow REP-103 right-handed and east zero, https://docs.novatel.com/OEM7/Content/SPAN_Logs/INSPVA.htm
+        auto yaw = DEG2RAD(-msgINSPVAXB_in->azimuth + 90.0);
         auto pitch = DEG2RAD(msgINSPVAXB_in->pitch);
         auto roll = DEG2RAD(msgINSPVAXB_in->roll);
         auto angular_velocity_x = DEG2RAD(msgGTIMU_in->gyroscope_x);
         auto angular_velocity_y = DEG2RAD(msgGTIMU_in->gyroscope_y);
         auto angular_velocity_z = DEG2RAD(msgGTIMU_in->gyroscope_z);
-        auto linear_acceleration_x = msgGTIMU_in->acceleration_x * 9.8;
-        auto linear_acceleration_y = msgGTIMU_in->acceleration_y * 9.8;
-        auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8;
+        auto linear_acceleration_x = msgGTIMU_in->acceleration_x * 9.8066;
+        auto linear_acceleration_y = msgGTIMU_in->acceleration_y * 9.8066;
+        auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8066;
 
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
 
@@ -243,15 +244,15 @@ public:
             nanosecond = local_nanosecond;
         }
 
-        auto yaw = DEG2RAD(msgGPFPD_in->heading);
+        auto yaw = DEG2RAD(-msgGPFPD_in->heading + 90.0);
         auto pitch = DEG2RAD(msgGPFPD_in->pitch);
         auto roll = DEG2RAD(msgGPFPD_in->roll);
         auto angular_velocity_x = DEG2RAD(msgGTIMU_in->gyroscope_x);
         auto angular_velocity_y = DEG2RAD(msgGTIMU_in->gyroscope_y);
         auto angular_velocity_z = DEG2RAD(msgGTIMU_in->gyroscope_z);
-        auto linear_acceleration_x = msgGTIMU_in->acceleration_x * 9.8;
-        auto linear_acceleration_y = msgGTIMU_in->acceleration_y * 9.8;
-        auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8;
+        auto linear_acceleration_x = msgGTIMU_in->acceleration_x * 9.8066;
+        auto linear_acceleration_y = msgGTIMU_in->acceleration_y * 9.8066;
+        auto linear_acceleration_z = msgGTIMU_in->acceleration_z * 9.8066;
 
         fillBasicImumsg(*msg_out, nanosecond, yaw, pitch, roll, angular_velocity_x, angular_velocity_y, angular_velocity_z, linear_acceleration_x, linear_acceleration_y, linear_acceleration_z);
 
