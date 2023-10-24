@@ -15,6 +15,7 @@
 #include <cstring>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string.hpp>
 #include <vector>
 #include <sstream>
 
@@ -226,7 +227,8 @@ public:
     static void parseGTIMU2msg(const std::string& msg_in, integrated_navigation_reader::NMEA_GTIMU& msg_out)
     {
         std::vector<std::string> vSub;
-        boost::split(vSub, msg_in, boost::is_any_of(",|*"), boost::token_compress_on);
+//        boost::split(vSub, msg_in, boost::is_any_of(",*"));
+        boost::split(vSub, msg_in, boost::is_any_of(",*"), boost::token_compress_on);
 
         if (vSub.size() < 10)
         {

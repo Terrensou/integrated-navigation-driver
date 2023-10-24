@@ -47,12 +47,13 @@ public:
     {
         // std::cout << "gps status: " << msg_in->status.status << std::endl;
         if (msgNavsatFix_in->status.status <= sensor_msgs::NavSatStatus::STATUS_NO_FIX){
-            if (gnss_fixed){
-                ROS_WARN("GNSS signal no fixed.");
-            } else {
-                ROS_ERROR("GNSS signal no fixed, please wait for fixed!");
-                return;
-            }
+//            if (gnss_fixed){
+//                ROS_WARN("GNSS signal no fixed.");
+//            }
+//            else {
+//                ROS_ERROR("GNSS signal no fixed, please wait for fixed!");
+//                return;
+//            }
         }
         gnss_fixed = true;
 
@@ -72,7 +73,7 @@ public:
 
         if (!initOdometry) {
             ROS_INFO("GNSS Odometry original LLA: %f, %f, %f", msgNavsatFix_in->latitude, msgNavsatFix_in->longitude, msgNavsatFix_in->altitude);
-            ROS_INFO("GNSS Odometry original UTM: %f, %f, %f; zone: %d, band: %d", pUTM.easting, pUTM.northing, pUTM.altitude, pUTM.zone, pUTM.band);
+            ROS_INFO("GNSS Odometry original UTM: %f, %f, %f; zone: %d, band: %c", pUTM.easting, pUTM.northing, pUTM.altitude, pUTM.zone, pUTM.band);
             originalUTM = pLLA;
             initOdometry = true;
 //            return;
@@ -92,8 +93,6 @@ public:
         double y = 0;
         double z = 0;
         if (coordinate_type == "ENU") {
-//            x = pUTM.easting - originalUTM.easting;
-//            y = pUTM.northing - originalUTM.northing;
             y = pUTM.easting - originalUTM.easting;
             x = pUTM.northing - originalUTM.northing;
             if (show_altitude) {

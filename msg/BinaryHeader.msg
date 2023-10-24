@@ -54,24 +54,24 @@ uint16 port_address
 uint16 message_length
 int32 sequence
 
-float32 idle_time
+float64 idle_time
 
 uint8 UNKNOWN = 20
-uint8 APPROXIMATE = 20
-uint8 COARSEADJUSTING = 20
-uint8 COARSE = 20
-uint8 COARSESTEERING = 20
-uint8 FREEWHEELING = 20
-uint8 FINEADJUSTING = 20
-uint8 FINE = 20
-uint8 FINEBACKUPSTEERING = 20
-uint8 FINESTEERING = 20
-uint8 SATTIME = 20
+uint8 APPROXIMATE = 60
+uint8 COARSEADJUSTING = 80
+uint8 COARSE = 100
+uint8 COARSESTEERING = 120
+uint8 FREEWHEELING = 130
+uint8 FINEADJUSTING = 140
+uint8 FINE = 160
+uint8 FINEBACKUPSTEERING = 170
+uint8 FINESTEERING = 180
+uint8 SATTIME = 200
 uint8 time_status
 
 uint16 week
 uint64 milliseconds
 
-string receiver_status
+Log_ReceiverStatus receiver_status
 string reserved
 uint32 receiver_sw_version

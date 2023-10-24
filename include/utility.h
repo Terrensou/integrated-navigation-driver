@@ -83,16 +83,50 @@ double RAD2DEG(double x)
     return x / M_PI * 180.0;
 }
 
+std::string decimal2BinaryString(int dec, unsigned int length) {
+    std::string binString;
+    if (dec == 0) {
+        binString.insert(binString.begin(), '0');
+    } else {
+        while (dec > 0) {
+            int remainder = dec % 2;
+            binString.insert(binString.begin(), '0' + remainder);
+            dec /= 2;
+        }
+    }
+    unsigned int currLength = binString.length();
+    if (currLength < length) {
+        binString = std::string(length - currLength, '0') + binString;
+    }
+
+    return binString;
+}
+
 std::string bytes2String(const uint8_t *str, unsigned int num){
 
     return std::string((char *)str, num);
 }
 
-std::string chat2BinaryString(const char c){
+std::string char2BinaryString(const char c){
     std::bitset<8> binary(c);
     return binary.to_string();
 }
 
+std::string charBits2HexString(const bool b0, const bool b1, const bool b2, const bool b3, const bool b4, const bool b5, const bool b6, const bool b7, const bool is_uppercase = false) {
+    std::bitset<8> bits;
+    bits[0] = b0;
+    bits[1] = b1;
+    bits[2] = b2;
+    bits[3] = b3;
+    bits[4] = b4;
+    bits[5] = b5;
+    bits[6] = b6;
+    bits[7] = b7;
+
+    std::ostringstream hexStream;
+    hexStream << std::setw(2) << std::hex << std::setfill('0') << bits.to_ulong();
+    return hexStream.str();
+}
 
 std::string string2Hex(std::string input, const bool is_uppercase = false, const bool reverse = false) {
     if (reverse) {

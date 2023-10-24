@@ -17,7 +17,7 @@
     <node name="NavsatFix_generator_node" pkg="integrated_navigation_reader" type="navsatfix_generator_node" respawn="true">
     </node>
 
-    <node name="Imu_generator_node" pkg="integrated_navigation_reader" type="imu_generator_node" respawn="true">
+    <node name="Imu_generator_node" pkg="integrated_navigation_reader" type="imu_generator_node" respawn="true" output="screen">
     </node>
 
     <node name="Odometry_generator_node" pkg="integrated_navigation_reader" type="odom_generator_node" respawn="true" output="screen">

@@ -1,0 +1,18 @@
+# Solution status - page 500
+
+uint8 SOL_COMPUTED = 0
+uint8 INSUFFICIENT_OBS = 1
+uint8 NO_CONVERGENCE = 2
+uint8 SINGULARITY = 3
+uint8 COV_TRACE = 4
+uint8 TEST_DIST = 5
+uint8 COLD_START = 6
+uint8 V_H_LIMIT = 7
+uint8 VARIANCE = 8
+uint8 RESIDUALS = 9
+uint8 INTEGRITY_WARNING = 13
+uint8 PENDING = 18
+uint8 INVALID_FIX = 19
+uint8 UNAUTHORIZED = 20
+uint8 INVALID_RATE = 22
+uint8 status

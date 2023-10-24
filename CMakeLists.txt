@@ -56,18 +56,34 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
- add_message_files(
-   FILES
-   NMEA_GPFPD.msg
-   NMEA_GTIMU.msg
-   NMEA_GPGGA.msg
-   NMEA_NVSTD.msg
-   NMEA_GPCHC.msg
-   Spanlog_ASCIIHeader.msg
-   Spanlog_BinaryHeader.msg
-   Spanlog_INSPVAXA.msg
-   Spanlog_INSPVAXB.msg
- )
+add_message_files(
+    FILES
+    NMEA_GPFPD.msg
+    NMEA_GTIMU.msg
+    NMEA_GPGGA.msg
+    NMEA_NVSTD.msg
+    NMEA_GPCHC.msg
+    Log_ReceiverStatus.msg
+    ASCIIHeader.msg
+    BinaryHeader.msg
+    Log_DUALANTENNAHEADINGB.msg
+    Log_ExtendedSolutionStatus.msg
+    Log_GalileoBeiDouSignalUsedMask.msg
+    Log_GPSGLONASSSignalUsedMask.msg
+    Log_PositionVelocityType.msg
+    Log_SolutionSource.msg
+    Log_SolutionStatus.msg
+    SPANLog_BESTGNSSPOSB.msg
+    SPANLog_BESTGNSSVELB.msg
+    SPANLog_CORRIMUDATAB.msg
+    SPANLog_ExtendedSolutionStatus.msg
+#    SPANLESS.msg
+    SPANLog_INSPVAXA.msg
+    SPANLog_INSPVAXB.msg
+    SPANLog_INSStatus.msg
+    SPANLog_RAWIMUB.msg
+
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -149,7 +165,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(spanlog_parser_node src/parseSpanlog.cpp)
+add_executable(spanlog_parser_node src/parseSPANLog.cpp)
 add_executable(binary_serial_parser_node src/parseBinarySerial.cpp)
 add_executable(nmea_parser_node src/parseNMEA.cpp)
 add_executable(navsatfix_generator_node src/generateNavsatFix.cpp)

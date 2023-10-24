@@ -1,0 +1,45 @@
+<launch>
+    <rosparam command="load" file="$(find integrated_navigation_reader)/config/gnss_and_INS.yaml" />
+    <arg name="NMEA_pub_topic" default="/nmea/sentence" />
+
+    <!-- NMEA Serial Driver -->
+    <node name="Binary_serial_reader_node" pkg="integrated_navigation_reader" type="binary_serial_parser_node" required="true" output="screen">
+    </node>
+
+    <node name="Nmea_parser_node" pkg="integrated_navigation_reader" type="nmea_parser_node" required="true">
+        <remap from="/nmea_sentence" to="$(arg NMEA_pub_topic)" />
+    </node>
+
+    <node name="INS_NavsatFix_generator_node" pkg="integrated_navigation_reader" type="navsatfix_generator_node" respawn="true">
+    </node>
+    <node name="GNSS_NavsatFix_generator_node" pkg="integrated_navigation_reader" type="navsatfix_generator_node" respawn="true">
+        <remap from="/integrated_nav/NavsatFix" to="/integrated_nav/GNSS_NavsatFix" />
+        <remap from="/integrated_nav/INS_Time" to="/integrated_nav/GNSS_Time" />
+    </node>
+
+    <node name="INS_Imu_generator_node" pkg="integrated_navigation_reader" type="imu_generator_node" respawn="true">
+    </node>
+    <node name="RAW_Imu_generator_node" pkg="integrated_navigation_reader" type="imu_generator_node" respawn="true">
+        <remap from="/integrated_nav/Imu" to="/integrated_nav/RAW_Imu" />
+        <remap from="/integrated_nav/IMU_Time" to="/integrated_nav/RAW_IMU_Time" />
+    </node>
+
+    <node name="INS_Odometry_generator_node" pkg="integrated_navigation_reader" type="odom_generator_node" respawn="true" output="screen">
+    </node>
+    <node name="GNSS_Odometry_generator_node" pkg="integrated_navigation_reader" type="odom_generator_node" respawn="true" output="screen">
+        <remap from="/integrated_nav/NavsatFix" to="/integrated_nav/GNSS_NavsatFix" />
+        <remap from="/integrated_nav/Imu" to="/integrated_nav/RAW_Imu" />
+        <remap from="/integrated_nav/Odom" to="/integrated_nav/GNSS_Odom" />
+        <remap from="/integrated_nav/Path" to="/integrated_nav/GNSS_Path" />
+    </node>
+<!--    <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_odom" args="0 0 0 0 0 0 world integrated_nav_odom" />-->
+
+    <!--  GNSS visualization  -->
+<!--    <node pkg="rostopic" type="rostopic" name="fake_gps_fix"-->
+<!--          args="pub gps/fix sensor_msgs/NavSatFix '{ header: auto, latitude: 40.00571121, longitude: 116.35022637, altitude: 37.81999969482422}'"-->
+<!--          output="screen"/>-->
+
+<!--    <node pkg="rviz" type="rviz" name="odom_path_rviz"-->
+<!--          args="-d $(find integrated_navigation_reader)/launch/rviz/demo_utm.rviz"/>-->
+
+</launch>

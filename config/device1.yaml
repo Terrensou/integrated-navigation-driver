@@ -1,12 +1,17 @@
 # Define how to read serial
 Nmea_serial_reader_node:
-  port: /dev/ttyACM0
-#  port: /dev/ttyUSB0
+#  port: /dev/ttyACM0
+  port: /dev/ttyUSB0
   baud: 115200
   timeout: 1000
 
-Binary_serial_reader_node:
+Binary_serial_reader_node_1:
   INSPVAXB: true
+  BESTGNSSPOSB: true
+  BESTGNSSVELB: true
+  CORRIMUDATAB: true
+  RAWIMUB: true
+  DUALANTENNAHEADINGB: true
   GPFPS: false
   GPFPS_BIN: false
   GTIMU: true
@@ -15,14 +20,14 @@ Binary_serial_reader_node:
   GPFPD: true
   GPCHC: false
 
-Nmea_parser_node:
+Nmea_parser_node_1:
   GPFPD: true
   GTIMU: true
   GPGGA: false
   NVSTD: false
   GPCHC: false
 
-Spanlog_parser_node:
+Spanlog_parser_node_1:
   INSPVAXA: true
 
 # Used for TimeReference message, and NavsatFix & Imu message if "use_gnss_time" is true.
@@ -30,19 +35,20 @@ time_set:
   time_zone: 8  # parse gnss time to ROS NavsatFix stamp, if use GPGGA defalut time zone is 0
   leap_second: 27 #  used for GPFPD: leap second from 1970s to 2022 is 27
 
-NavsatFix_generator_node:
-  NavsatFix_generate_from: INSPVAXB  # optional: GPCHC, GPFPD, GPGGA, INSPVAXB
-  frame_id: gnss_link # for rviz GNSS map visualization, we should use "base_link".
+NavsatFix_generator_node_1:
+  NavsatFix_generate_from: INSPVAXB  # optional: GPCHC, GPFPD, GPGGA, INSPVAXB, BESTGNSSPOSB
+  frame_id: ins_link # for rviz GNSS map visualization, we should use "base_link".
   use_gnss_time: true # NavsatFix message header stamp is gnss time
 
 
-Imu_generator_node:
-  Imu_generate_from: INSPVAXB-GTIMU  # optional: GPCHC, GPFPD-GTIMU, INSPVAXB-GTIMU, NVSTD-GPFPD-GTIMU
+Imu_generator_node_1:
+  Imu_generate_from: INSPVAXB-GTIMU  # optional: GPCHC, GPFPD-GTIMU, INSPVAXB-GTIMU, NVSTD-GPFPD-GTIMU, RAWIMUB-DUALANTENNAHEADINGB, CORRIMUDATAB
   frame_id: imu_link
   use_gnss_time: true # IMU message header stamp is gnss time
+  raw_imu_frequence: 0 # If zero or empty, it will calculate frequence from first two raw imu message.
 
 # In case of gnss point refer to imu original point. No external matrix.
-Odometry_generator_node:
+Odometry_generator_node_1:
   coordinate_type: UTM
   show_altitude: true
   parent_frame_id: map

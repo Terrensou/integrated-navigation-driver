@@ -1,0 +1,64 @@
+<launch>
+    <rosparam command="load" file="$(find integrated_navigation_reader)/config/device2.yaml" />
+
+    <!-- NMEA Serial Driver -->
+    <node name="Binary_serial_reader_node_2" pkg="integrated_navigation_reader" type="binary_serial_parser_node" required="true" output="screen">
+        <remap from="/nmea/sentence" to="/nmea/sentence_2" />
+        <remap from="/spanlog/sentence" to="/spanlog/sentence_2" />
+        <remap from="/spanlog/inspvaxb" to="/spanlog/inspvaxb_2" />
+        <remap from="/spanlog/bestgnssposb" to="/spanlog/bestgnssposb_2" />
+        <remap from="/spanlog/bestgnssvelb" to="/spanlog/bestgnssvelb_2" />
+        <remap from="/spanlog/corrimudatab" to="/spanlog/corrimudatab_2" />
+        <remap from="/spanlog/rawimub" to="/spanlog/rawimub_2" />
+        <remap from="/spanlog/dualantennaheadingb" to="/spanlog/dualantennaheadingb_2" />
+    </node>
+
+    <node name="Nmea_parser_node_2" pkg="integrated_navigation_reader" type="nmea_parser_node" required="true" output="screen">
+        <remap from="/nmea_sentence" to="/nmea/sentence_2" />
+
+        <remap from="/nmea/gpchc" to="/nmea/gpchc_2" />
+        <remap from="/nmea/gpfpd" to="/nmea/gpfpd_2" />
+        <remap from="/nmea/gpgga" to="/nmea/gpgga_2" />
+        <remap from="/nmea/gtimu" to="/nmea/gtimu_2" />
+    </node>
+
+    <node name="NavsatFix_generator_node_2" pkg="integrated_navigation_reader" type="navsatfix_generator_node" respawn="true">
+        <remap from="/nmea/gpchc" to="/nmea/gpchc_2" />
+        <remap from="/nmea/gpfpd" to="/nmea/gpfpd_2" />
+        <remap from="/nmea/gpgga" to="/nmea/gpgga_2" />
+        <remap from="/spanlog/inspvaxb" to="/spanlog/inspvaxb_2" />
+        <remap from="/spanlog/bestgnssposb" to="/spanlog/bestgnssposb_2" />
+
+        <remap from="/integrated_nav/NavsatFix" to="/integrated_nav/NavsatFix_2" />
+        <remap from="/integrated_nav/INS_Time" to="/integrated_nav/INS_Time_2" />
+    </node>
+
+    <node name="Imu_generator_node_2" pkg="integrated_navigation_reader" type="imu_generator_node" respawn="true">
+        <remap from="/nmea/gpchc" to="/nmea/gpchc_2" />
+        <remap from="/nmea/gpfpd" to="/nmea/gpfpd_2" />
+        <remap from="/spanlog/inspvaxb" to="/spanlog/inspvaxb_2" />
+        <remap from="/nmea/gtimu" to="/nmea/gtimu_2" />
+        <remap from="/spanlog/rawimub" to="/spanlog/rawimub_2" />
+        <remap from="/spanlog/dualantennaheadingb" to="/spanlog/dualantennaheadingb_2" />
+
+        <remap from="/integrated_nav/Imu" to="/integrated_nav/Imu_2" />
+        <remap from="/integrated_nav/IMU_Time" to="/integrated_nav/IMU_Time_2" />
+    </node>
+
+    <node name="Odometry_generator_node_2" pkg="integrated_navigation_reader" type="odom_generator_node" respawn="true" output="screen">
+        <remap from="/integrated_nav/NavsatFix" to="/integrated_nav/NavsatFix_2" />
+        <remap from="/integrated_nav/Imu" to="/integrated_nav/Imu_2" />
+        <remap from="/integrated_nav/Odom" to="/integrated_nav/Odom_2" />
+        <remap from="/integrated_nav/Path" to="/integrated_nav/Path_2" />
+    </node>
+<!--    <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_odom" args="0 0 0 0 0 0 world integrated_nav_odom" />-->
+
+    <!--  GNSS visualization  -->
+<!--    <node pkg="rostopic" type="rostopic" name="fake_gps_fix"-->
+<!--          args="pub gps/fix sensor_msgs/NavSatFix '{ header: auto, latitude: 40.00571121, longitude: 116.35022637, altitude: 37.81999969482422}'"-->
+<!--          output="screen"/>-->
+
+<!--    <node pkg="rviz" type="rviz" name="odom_path_rviz"-->
+<!--          args="-d $(find integrated_navigation_reader)/launch/rviz/demo_utm.rviz"/>-->
+
+</launch>
